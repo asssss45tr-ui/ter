@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18204f" />
+      <stop offset="50%" stop-color="#2c3fa8" />
+      <stop offset="100%" stop-color="#4257d6" />
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#050816" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- App Rounded Squircle Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bg-grad)" />
+
+  <!-- Subtle glow inner ring -->
+  <rect x="16" y="16" width="480" height="480" rx="100" fill="none" stroke="#60a5fa" stroke-width="3" stroke-opacity="0.3" />
+
+  <!-- Ledger Book Container -->
+  <g filter="url(#shadow)">
+    <!-- Book Backing -->
+    <rect x="105" y="85" width="302" height="340" rx="24" fill="#0f172a" opacity="0.6" />
+    
+    <!-- Ledger Spine & Cover -->
+    <rect x="115" y="95" width="282" height="320" rx="20" fill="url(#card-grad)" />
+    
+    <!-- Spine Line (Dark Indigo Binding) -->
+    <rect x="115" y="95" width="42" height="320" rx="20" fill="#1e265c" />
+    <rect x="135" y="95" width="22" height="320" fill="#1e265c" />
+    
+    <!-- Decorative Stitching on Spine -->
+    <circle cx="136" cy="140" r="4" fill="#f8fafc" opacity="0.8" />
+    <circle cx="136" cy="180" r="4" fill="#f8fafc" opacity="0.8" />
+    <circle cx="136" cy="220" r="4" fill="#f8fafc" opacity="0.8" />
+    <circle cx="136" cy="260" r="4" fill="#f8fafc" opacity="0.8" />
+    <circle cx="136" cy="300" r="4" fill="#f8fafc" opacity="0.8" />
+    <circle cx="136" cy="340" r="4" fill="#f8fafc" opacity="0.8" />
+    <circle cx="136" cy="380" r="4" fill="#f8fafc" opacity="0.8" />
+
+    <!-- Ledger Content Lines -->
+    <!-- Header row -->
+    <rect x="175" y="130" width="190" height="16" rx="8" fill="#3b82f6" />
+    <!-- Row 1 -->
+    <rect x="175" y="165" width="120" height="10" rx="5" fill="#94a3b8" />
+    <rect x="315" y="165" width="50" height="10" rx="5" fill="#10b981" />
+    <!-- Row 2 -->
+    <rect x="175" y="195" width="90" height="10" rx="5" fill="#94a3b8" />
+    <rect x="305" y="195" width="60" height="10" rx="5" fill="#ef4444" />
+    <!-- Row 3 -->
+    <rect x="175" y="225" width="130" height="10" rx="5" fill="#94a3b8" />
+    <rect x="320" y="225" width="45" height="10" rx="5" fill="#10b981" />
+    <!-- Divider -->
+    <line x1="175" y1="255" x2="365" y2="255" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6,4" />
+
+    <!-- Golden Coin / Calculation Seal -->
+    <g transform="translate(230, 275)" filter="url(#shadow)">
+      <circle cx="50" cy="50" r="46" fill="url(#gold-grad)" stroke="#ffffff" stroke-width="4" />
+      <!-- Calculator / Abacus / Percent Icon -->
+      <path d="M36 40 h28 M50 26 v28 M35 62 h30 M35 74 h30" fill="none" stroke="#78350f" stroke-width="4" stroke-linecap="round" />
+    </g>
+  </g>
+
+  <!-- Bottom App Title Tag -->
+  <rect x="136" y="425" width="240" height="52" rx="26" fill="#111827" stroke="#374151" stroke-width="2" />
+  <text x="256" y="460" font-family="'Vazirmatn', Tahoma, sans-serif" font-size="22" font-weight="900" fill="#f8fafc" text-anchor="middle">دفتر حساب هوشمند</text>
+</svg>

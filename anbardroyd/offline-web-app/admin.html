@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>انباریار | پنل مدیریت انبار و فروشگاه</title>
+  <meta name="description" content="پنل مدیریت جامع انبار، فروشگاه، کالاها، گزارشات مالی و پرسنل با پشتیبانی PWA و اندروید">
+  
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="/style-admin.css">
+  <link rel="stylesheet" href="/style-invoice.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- صفحه لاگین مدیر -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-icon">🔐</div>
+      <h1>انباریار</h1>
+      <p>ورود به پنل مدیریت انبار و فروشگاه</p>
+      <input type="password" id="adminPassInput" placeholder="••••" maxlength="10" autofocus onkeypress="if(event.key==='Enter')loginAdmin()">
+      <button onclick="loginAdmin()">ورود به پنل مدیریت</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:12px;">
+        <span class="login-hint" style="margin:0;">پیش‌فرض: <b>1234</b></span>
+        <button type="button" onclick="openAdminForgotModal()" style="background:none; border:none; color:#6366f1; font-weight:700; cursor:pointer; font-size:12px; text-decoration:underline;">فراموشی رمز عبور؟</button>
+      </div>
+      <div style="margin-top:14px;">
+        <a href="/worker.html" style="color:#6366f1; font-size:12px; text-decoration:none;">🛒 رفتن به صفحه صندوق فروش</a>
+      </div>
+      <div class="login-sig">نسخه PWA ۲.۱ | هماهنگ با اندروید APK</div>
+    </div>
+  </div>
+
+  <!-- رابط کاربری اصلی مدیریت -->
+  <div id="adminApp" style="display:none;">
+    <!-- هدر بالای صفحه -->
+    <header class="header">
+      <div class="header-content">
+        <div class="header-top">
+          <div class="header-title">
+            <span class="logo">📦</span>
+            <span id="shopTitleDisplay">انباریار</span>
+          </div>
+          <div class="header-actions">
+            <a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:700;margin-left:6px;">← <span>بازگشت به صندوق</span></a>
+            <a href="/daftar.html" class="icon-btn" style="background:#2c3fa8;color:#fff" title="دفتر حساب هوشمند (موبایل و APK)">📒</a>
+            <a href="/worker.html" class="icon-btn" title="صندوق فروش">🛒</a>
+            <button class="icon-btn" onclick="openApkGuideModal()" title="خروجی APK و نصب PWA">📱</button>
+            <button class="icon-btn" onclick="toggleDarkMode()" title="تغییر تم">🌓</button>
+            <button class="icon-btn" onclick="logoutAdmin()" title="خروج">🚪</button>
+          </div>
+        </div>
+        <div class="header-greeting">سامانه مدیریت جامع</div>
+        <div class="header-title-main">داشبورد و کنترل پنل</div>
+        <div class="header-sub">مدیریت موجودی، کالاها، گزارشات مالی و کارکنان</div>
+      </div>
+    </header>
+
+    <!-- تب‌های ناوبری بالای صفحه -->
+    <nav class="tabs">
+      <button class="tab active" onclick="switchTab('dashboard')">📊 داشبورد و آمار</button>
+      <button class="tab" onclick="switchTab('products')">📦 مدیریت کالاها</button>
+      <button class="tab" onclick="switchTab('addProduct')">➕ افزودن کالا</button>
+      <button class="tab" onclick="switchTab('invoices')">🧾 فاکتورها</button>
+      <button class="tab" onclick="switchTab('profit')">📈 سود و عملکرد مالی</button>
+      <button class="tab" onclick="switchTab('workers')">👥 پرسنل و صندوقداران</button>
+      <a href="/daftar.html" class="tab" style="background:rgba(59,130,246,0.15);color:#93c5fd;text-decoration:none;display:inline-flex;align-items:center;gap:4px">📒 دفتر حساب هوشمند</a>
+      <button class="tab" onclick="switchTab('settings')">⚙️ تنظیمات و بکاپ</button>
+      <button class="tab" onclick="switchTab('help')">❓ راهنما</button>
+    </nav>
+
+    <div class="container">
+      <!-- ۱. تب داشبورد و آمار -->
+      <section id="tab-dashboard" class="panel active">
+        <!-- کارت‌های آماری سریع -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon c1">💰</div>
+            <div class="stat-value blue" id="statTodaySales">۰</div>
+            <div class="stat-label">فروش امروز (تومان)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon c2">🧾</div>
+            <div class="stat-value green" id="statTodayInvoices">۰</div>
+            <div class="stat-label">فاکتورهای امروز</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon c3">📦</div>
+            <div class="stat-value orange" id="statTotalProducts">۰</div>
+            <div class="stat-label">تنوع کل کالاها</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon c6">⚠️</div>
+            <div class="stat-value red" id="statLowStock">۰</div>
+            <div class="stat-label">کالاهای رو به اتمام</div>
+          </div>
+        </div>
+
+        <!-- نمودار فروش ۳۰ روز اخیر -->
+        <div class="card">
+          <div class="card-title">
+            <span>📈 روند فروش ۳۰ روز اخیر</span>
+            <span class="badge badge-purple" id="chartTotalSales">جمع کل</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="salesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- عملکرد صندوقداران و پرسنل -->
+        <div class="card">
+          <div class="card-title">
+            <span>👥 عملکرد صندوقداران و فروشندگان</span>
+            <span class="badge badge-info">این ماه</span>
+          </div>
+          <div id="workersReportList">
+            <div class="empty-msg">در حال پردازش گزارش...</div>
+          </div>
+        </div>
+
+        <!-- هشدارهای کسری موجودی -->
+        <div class="card">
+          <div class="card-title">
+            <span>⚠️ کالاهای دارای کسری موجودی</span>
+            <span class="badge badge-danger">نیاز به سفارش</span>
+          </div>
+          <div id="lowStockList">
+            <div class="empty-msg">تمام کالاها دارای موجودی کافی هستند</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ۲. تب کالاها -->
+      <section id="tab-products" class="panel">
+        <div class="card">
+          <div class="card-title">
+            <span>📦 انبار و فهرست کالاها</span>
+            <button class="btn btn-primary btn-sm" onclick="switchTab('addProduct')">➕ کالای جدید</button>
+          </div>
+
+          <div class="search-box">
+            <input type="text" id="productSearchInput" placeholder="جستجو بر اساس نام، بارکد یا کد کالا..." oninput="filterProductsTable()">
+          </div>
+
+          <div class="filter-row" id="categoryFilters">
+            <button class="filter-chip active" onclick="filterByCategory('all')">همه دسته‌ها</button>
+          </div>
+
+          <div class="products-grid" id="productsContainer">
+            <div class="empty-msg">در حال بارگذاری کالاها...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ۳. تب افزودن کالا -->
+      <section id="tab-addProduct" class="panel">
+        <div class="card">
+          <div class="card-title">
+            <span id="productFormTitle">➕ افزودن کالای جدید به انبار</span>
+          </div>
+
+          <!-- اسکنر دوربین جهت بارکد کالا -->
+          <div class="scanner-box" id="addProductScanner">
+            <div style="text-align:center; padding:20px;">
+              <button class="btn btn-info" onclick="startAddProductScanner()">📷 اسکن بارکد با دوربین</button>
+              <div style="font-size:11px; margin-top:8px;">یا بارکد را در کادر زیر دستی وارد / با بارکدخوان اسکن کنید</div>
+            </div>
+          </div>
+          <div id="addProductReader" style="display:none; width:100%; border-radius:12px; overflow:hidden; margin-bottom:12px;"></div>
+
+          <form id="productForm" onsubmit="saveProduct(event)">
+            <input type="hidden" id="editProductId" value="">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>کد بارکد محصول (ضروری):</label>
+                <div style="position:relative;">
+                  <input type="text" id="pBarcode" class="ltr" placeholder="626xxxxxxxxxx" required autocomplete="off">
+                  <span id="barcodeStatusBadge" style="display:none; position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:11px; padding:3px 8px; border-radius:6px; font-weight:700;"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>نام کالا (ضروری):</label>
+                <input type="text" id="pName" placeholder="مثلاً: چیپس مزمز فلفلی" required>
+              </div>
+            </div>
+
+            <!-- باکس اطلاع‌رسانی وضعیت بارکد (اگر کالا قبلاً ثبت شده یا جدید است) -->
+            <div id="barcodeMatchInfo" style="display:none; margin-bottom:14px;"></div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>قیمت خرید (تومان):</label>
+                <input type="number" id="pCostPrice" class="ltr" placeholder="0" min="0" required>
+              </div>
+              <div class="form-group">
+                <label>قیمت فروش مصرف‌کننده (تومان):</label>
+                <input type="number" id="pSellPrice" class="ltr" placeholder="0" min="0" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>دسته‌بندی:</label>
+                <select id="pCategory"></select>
+              </div>
+              <div class="form-group">
+                <label>برند / سازنده:</label>
+                <select id="pBrand"></select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>موجودی فعلی:</label>
+                <input type="number" id="pStock" class="ltr" value="10" required>
+              </div>
+              <div class="form-group">
+                <label>حداقل موجودی (هشدار کسری):</label>
+                <input type="number" id="pMinStock" class="ltr" value="3" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>توضیحات و یادداشت (اختیاری):</label>
+              <input type="text" id="pNote" placeholder="قفسه، تاریخ انقضا و ...">
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:16px;">
+              <button type="submit" id="saveProductSubmitBtn" class="btn btn-primary" style="flex:1;">💾 ذخیره کالا در سیستم</button>
+              <button type="button" class="btn btn-secondary" onclick="resetProductForm()">انصراف / پاک کردن</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ۴. تب فاکتورها -->
+      <section id="tab-invoices" class="panel">
+        <div class="card">
+          <div class="card-title">
+            <span>🧾 تاریخچه و لیست فاکتورهای فروش</span>
+            <span class="badge badge-success" id="totalInvoicesBadge">۰ فاکتور</span>
+          </div>
+
+          <div class="search-box">
+            <input type="text" id="invoiceSearchInput" placeholder="جستجو بر اساس شماره فاکتور، نام مشتری یا صندوقدار..." oninput="filterInvoices()">
+          </div>
+
+          <div id="invoicesList">
+            <div class="empty-msg">در حال بارگذاری فاکتورها...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- تب گزارش سود و زیان و عملکرد مالی -->
+      <section id="tab-profit" class="panel">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon c2">💰</div>
+            <div class="stat-value green" id="statGrossProfit">۰</div>
+            <div class="stat-label">سود ناخالص کل (تومان)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon c1">📊</div>
+            <div class="stat-value blue" id="statProfitMargin">۰٪</div>
+            <div class="stat-label">میانگین حاشیه سود</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon c3">📅</div>
+            <div class="stat-value green" id="statTodayProfit">۰</div>
+            <div class="stat-label">سود امروز (تومان)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon c6">📆</div>
+            <div class="stat-value purple" id="statMonthProfit">۰</div>
+            <div class="stat-label">سود ماه جاری (تومان)</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>🏆 پرسودترین کالاها (بیشترین بازدهی و سود مالی)</span>
+            <button class="btn btn-secondary btn-sm" onclick="loadProfitReport()">🔄 به‌روزرسانی گزارش</button>
+          </div>
+          <div id="topProfitableList">
+            <div class="empty-msg">در حال بارگذاری و تحلیل داده‌های سود...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ۵. تب پرسنل -->
+      <section id="tab-workers" class="panel">
+        <div class="card">
+          <div class="card-title">
+            <span>👥 پرسنل، صندوقداران و سطوح دسترسی</span>
+            <button class="btn btn-primary btn-sm" onclick="openAddWorkerModal()">➕ افزودن صندوقدار</button>
+          </div>
+
+          <div id="workersTable"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>📱 QR کد ورود سریع صندوقداران</span>
+          </div>
+          <div class="qr-box">
+            <p style="font-size:12px; margin-bottom:12px;">صندوقداران می‌توانند با اسکن این QR کد، مستقیماً وارد صفحه صندوق شوند:</p>
+            <div id="workerQrContainer" style="display:inline-block; padding:10px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+            <div class="qr-url" id="workerQrUrl"></div>
+            <a href="/worker.html" target="_blank" class="btn btn-info btn-sm">باز کردن صفحه صندوق در برگه جدید</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ۶. تب تنظیمات و بکاپ -->
+      <section id="tab-settings" class="panel">
+        <div class="card">
+          <div class="card-title">
+            <span>⚙️ مشخصات فروشگاه و فاکتور</span>
+          </div>
+
+          <!-- کارت ویژه: تنظیمات ورود بدون رمز و حذف کادر ورود -->
+          <div style="background:rgba(99,102,241,0.08); border:1.5px solid #6366f1; border-radius:14px; padding:16px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-weight:800; font-size:14.5px; color:#a5b4fc;">🔐 تنظیمات ورود و حذف رمز عبور (ورود مستقیم)</span>
+              <span id="passStatusBadge" style="background:#10b981; color:#fff; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:8px;">ورود با رمز</span>
+            </div>
+            <p style="font-size:12.5px; color:var(--text-2); line-height:1.7; margin:0 0 12px;">
+              اگر مایلید بدون نیاز به وارد کردن مکرر رمز عبور مستقیماً وارد برنامه شوید و کادر رمز ظاهر نشود، گزینه زیر را فعال کنید:
+            </p>
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; background:var(--bg-card); padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+              <input type="checkbox" id="setDisablePassword" style="width:20px; height:20px; cursor:pointer;" onchange="toggleDisablePassword(this.checked)">
+              <span style="font-weight:700; font-size:13.5px; color:#ffffff;">
+                ورود مستقیم بدون نیاز به رمز عبور (غیرفعال‌سازی کادر ورود در کل سامانه)
+              </span>
+            </label>
+          </div>
+
+          <form onsubmit="saveSettings(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>نام فروشگاه / سوپرمارکت:</label>
+                <input type="text" id="setShopName" required>
+              </div>
+              <div class="form-group">
+                <label>شماره تماس فروشگاه:</label>
+                <input type="text" id="setShopPhone" class="ltr">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>آدرس فروشگاه:</label>
+              <input type="text" id="setShopAddress">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>رمز عبور مدیر:</label>
+                <input type="password" id="setAdminPass" class="ltr">
+              </div>
+              <div class="form-group">
+                <label>واحد پول:</label>
+                <select id="setCurrency">
+                  <option value="تومان">تومان</option>
+                  <option value="ریال">ریال</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>متن انتهای فاکتور (تشکر):</label>
+              <input type="text" id="setFooterNote">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:10px;">💾 ذخیره تغییرات تنظیمات</button>
+          </form>
+        </div>
+
+        <!-- پشتیبان‌گیری و خروجی داده‌ها -->
+        <div class="card">
+          <div class="card-title">
+            <span>💾 پشتیبان‌گیری، خروجی اکسل و بازیابی داده‌ها</span>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="exportDataExcel()">📊 خروجی اکسل و CSV کالاها</button>
+            <button class="btn btn-info" onclick="downloadBackupJson()">💾 دانلود فایل پشتیبان کامل (JSON)</button>
+            <label class="btn btn-secondary" style="cursor:pointer;">
+              📂 بازیابی فایل بکاپ
+              <input type="file" id="backupFileInput" accept=".json" style="display:none;" onchange="restoreBackupJson(event)">
+            </label>
+          </div>
+        </div>
+
+        <!-- نصب اپلیکیشن و خروجی APK -->
+        <div class="card">
+          <div class="card-title">
+            <span>📱 نسخه نصبی موبایل، PWA و خروجی APK</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-2); line-height:1.8; margin-bottom:14px;">
+            این سامانه استاندارد کامل PWA، Manifest و کش آفلاین را داراست. شما و پرسنل می‌توانید برنامه را بدون نیاز به کافه‌بازار مستقیماً به عنوان اپلیکیشن اندروید نصب کنید یا خروجی APK بگیرید.
+          </p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="/api/download/android-package" download="anbaryar-smart-ledger-android-package.zip" class="btn btn-success" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              📥 دانلود مستقیم بسته کامل اندروید (ZIP/APK)
+            </a>
+            <button class="btn btn-primary" onclick="triggerPWAInstall()">📲 نصب مستقیم در گوشی</button>
+            <button class="btn btn-secondary" onclick="openApkGuideModal()">📖 راهنمای فایل APK</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ۷. تب راهنما -->
+      <section id="tab-help" class="panel">
+        <div class="card">
+          <div class="card-title">
+            <span>❓ راهنمای سامانه انباریار</span>
+          </div>
+          <div class="help-content">
+            <p><b>۱. صندوق فروش و بارکدخوان:</b> صندوقداران می‌توانند با گوشی موبایل یا تبلت بارکد اجناس را با دوربین سریع اسکن کنند. همچنین بارکدخوان‌های فیزیکی USB و بی‌سیم نیز پشتیبانی می‌شوند.</p>
+            <p><b>۲. چاپ فاکتور:</b> از طریق صفحه صندوق، بلافاصله پس از تسویه، امکان چاپ فیش حرارتی ۸۰ میلی‌متری و یا فاکتور رسمی A4 وجود دارد.</p>
+            <p><b>۳. ارسال به واتساپ:</b> با زدن دکمه واتساپ، کل اقلام و جمع فاکتور به همراه پیام تشکر برای مشتری یا مدیر ارسال می‌شود.</p>
+            <p><b>۴. مدیریت موجودی کالاها:</b> با ثبت هر فاکتور، به صورت خودکار از موجودی انبار کسر شده و در صورت رسیدن به حداقل هشدار، در داشبورد مدیر نمایش داده می‌شود.</p>
+            <p><b>۵. کارکرد آفلاین:</b> به لطف سرویس‌ورکر هوشمند، سامانه در قطعی اینترنت نیز باز شده و اطلاعات را در حافظه محلی ذخیره می‌کند.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- مودال مشاهده جزئیات فاکتور -->
+  <div id="viewInvoiceModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeInvoiceModal()">
+    <div class="modal">
+      <div class="invoice-view" id="invoiceModalContent"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeInvoiceModal()">بستن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال افزودن صندوقدار -->
+  <div id="addWorkerModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeAddWorkerModal()">
+    <div class="modal">
+      <h3>➕ افزودن صندوقدار جدید</h3>
+      <div class="form-group">
+        <label>نام و نام خانوادگی:</label>
+        <input type="text" id="newWorkerName" class="modal-input" placeholder="مثلاً: محمد رضایی" required>
+      </div>
+      <div class="form-group">
+        <label>نقش:</label>
+        <select id="newWorkerRole" class="modal-input">
+          <option value="worker">صندوقدار / فروشنده</option>
+          <option value="manager">مدیر</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeAddWorkerModal()">انصراف</button>
+        <button class="btn btn-primary" onclick="saveNewWorker()">ذخیره کاربر</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال راهنمای APK و PWA -->
+  <div id="apkGuideModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeApkGuideModal()">
+    <div class="modal">
+      <h3>📱 تبدیل به فایل نصبی موبایل (APK / PWA)</h3>
+      <div style="font-size:13px; line-height:1.9; color:var(--text-2);">
+        <p><b>۱. نصب به صورت اپلیکیشن موبایل (توصیه شده):</b></p>
+        <p style="margin-bottom:8px;">
+          با باز کردن آدرس سامانه در مرورگر Chrome یا Samsung Internet گوشی، گزینه <b>Install App</b> یا <b>افزودن به صفحه اصلی</b> را بزنید تا برنامه بدون نوار مرورگر به صورت تمام صفحه روی صفحه اصلی گوشی شما قرار گیرد.
+        </p>
+
+        <div style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:12px; padding:12px; margin:12px 0;">
+          <p style="font-weight:bold; color:var(--p1); margin-bottom:4px;">۲. ساخت فایل واقعی APK برای اندروید:</p>
+          <p style="font-size:12px;">
+            این پروژه دارای وب مانیفست کامل است. آدرس این سامانه را در سایت معتبر <b>PWABuilder.com</b> کپی کنید؛ سپس با انتخاب <b>Android -> Package</b>، فایل اختصاصی <code>.apk</code> جهت نصب مستقیم روی تمام گوشی‌های اندرویدی را به سادگی دانلود کنید!
+          </p>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:16px; flex-wrap:wrap; gap:8px;">
+        <a href="/api/download/android-package" download="anbaryar-smart-ledger-android-package.zip" class="btn btn-success" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+          📥 دانلود بسته کامل سورس اندروید (ZIP/APK)
+        </a>
+        <button class="btn btn-primary" onclick="triggerPWAInstall()">📲 نصب در گوشی</button>
+        <button class="btn btn-secondary" onclick="closeApkGuideModal()">بستن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال فراموشی و بازیابی رمز عبور مدیریت -->
+  <div id="adminForgotModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeAdminForgotModal()">
+    <div class="modal" style="max-width:440px;">
+      <h3>🔑 بازیابی رمز عبور پنل مدیریت</h3>
+      <p style="font-size:12.5px; color:var(--text-2); line-height:1.7; margin-bottom:14px;">
+        جهت بازنشانی رمز عبور، کلید اضطراری یا شماره همراه مدیر را وارد نمایید:
+      </p>
+
+      <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:12px; margin-bottom:14px; font-size:12px;">
+        <div style="display:flex; align-items:center; gap:6px; font-weight:bold; color:var(--p1); margin-bottom:4px;">
+          <span>💡</span><span>روش‌های بازیابی مجاز:</span>
+        </div>
+        <ul style="margin:0; padding-right:18px; line-height:1.8;">
+          <li>کلید اضطراری مدیریت: <code>123456</code> یا <code>1234</code> یا <code>admin</code></li>
+          <li>شماره همراه مدیر / مغازه ثبت‌شده در سامانه</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label>کلید اضطراری یا شماره همراه مدیر:</label>
+        <input type="text" id="recoverKeyInput" class="modal-input ltr" placeholder="123456 یا 0912..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>رمز عبور جدید (حداقل ۴ کاراکتر):</label>
+        <input type="password" id="recoverNewPass" class="modal-input ltr" placeholder="••••" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>تکرار رمز عبور جدید:</label>
+        <input type="password" id="recoverNewPass2" class="modal-input ltr" placeholder="••••" autocomplete="new-password">
+      </div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-secondary" onclick="closeAdminForgotModal()">انصراف</button>
+        <button class="btn btn-primary" onclick="submitAdminPasswordReset()">تغییر رمز و ورود به سامانه</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="printArea" style="display:none;"></div>
+
+  <!-- اسکریپت اصلی پنل مدیریت -->
+  <script>
+    let db = {
+      categories: [],
+      brands: [],
+      products: [],
+      sales: [],
+      invoices: []
+    };
+    let users = [];
+    let settings = {};
+    let salesChart = null;
+    let selectedCategory = 'all';
+    let deferredPrompt = null;
+    let addProductHtml5QrCode = null;
+
+    // ثبت Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.warn);
+    }
+
+    // PWA Prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function triggerPWAInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+      } else {
+        openApkGuideModal();
+      }
+    }
+
+    function openApkGuideModal() { document.getElementById('apkGuideModal').style.display = 'flex'; }
+    function closeApkGuideModal() { document.getElementById('apkGuideModal').style.display = 'none'; }
+
+    // پیام نوتیفیکیشن موقت (Toast)
+    function showToast(msg, type = 'info') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type} show`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3200);
+    }
+
+    // لاگین و بررسی ورود بدون رمز
+    window.addEventListener('DOMContentLoaded', async () => {
+      initHardwareBackButtonProtection();
+      const isNoPass = localStorage.getItem('anbariyar_no_pass') === 'true';
+      const isAuth = sessionStorage.getItem('anbariyar_admin_auth') === 'true' || localStorage.getItem('anbariyar_admin_auth') === 'true';
+
+      if (isNoPass || isAuth) {
+        showAdminApp();
+        return;
+      }
+
+      // Check server settings in case password was disabled
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const s = await res.json();
+          if (s.disablePassword) {
+            localStorage.setItem('anbariyar_no_pass', 'true');
+            showAdminApp();
+            return;
+          }
+        }
+      } catch (e) {}
+    });
+
+    async function loginAdmin() {
+      const pass = document.getElementById('adminPassInput').value.trim();
+      const isNoPass = localStorage.getItem('anbariyar_no_pass') === 'true';
+      if (!pass && !isNoPass) return;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pass || '1234' })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          sessionStorage.setItem('anbariyar_admin_auth', 'true');
+          localStorage.setItem('anbariyar_admin_auth', 'true');
+          showAdminApp();
+          showToast('ورود با موفقیت انجام شد', 'success');
+        } else {
+          showToast('رمز عبور نادرست است! رمز پیش‌فرض 1234 می‌باشد.', 'error');
+        }
+      } catch (e) {
+        if (pass === '1234' || isNoPass) {
+          sessionStorage.setItem('anbariyar_admin_auth', 'true');
+          localStorage.setItem('anbariyar_admin_auth', 'true');
+          showAdminApp();
+          showToast('ورود آفلاین موفقیت‌آمیز', 'success');
+        } else {
+          showToast('رمز عبور نادرست است', 'error');
+        }
+      }
+    }
+
+    async function toggleDisablePassword(disabled) {
+      try {
+        localStorage.setItem('anbariyar_no_pass', disabled ? 'true' : 'false');
+        localStorage.setItem('dh_no_pass', disabled ? 'true' : 'false');
+        localStorage.setItem('anbariyar_admin_auth', 'true');
+        settings.disablePassword = disabled;
+
+        const badge = document.getElementById('passStatusBadge');
+        if (badge) {
+          badge.style.background = disabled ? '#f59e0b' : '#10b981';
+          badge.textContent = disabled ? 'ورود مستقیم بدون رمز' : 'ورود با رمز';
+        }
+
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ disablePassword: disabled })
+        });
+
+        if (disabled) {
+          showToast('رمز عبور غیرفعال شد. از این پس برنامه مستقیماً و بدون کادر ورود باز می‌شود.', 'success');
+        } else {
+          showToast('رمز عبور فعال شد. برای ورود مجدد رمز لازم خواهد بود.', 'info');
+        }
+      } catch (e) {
+        showToast('خطا در ذخیره وضعیت رمز عبور', 'error');
+      }
+    }
+
+    // حفاظت از دکمه بازگشت فیزیکی گوشی (Hardware Back Button)
+    function initHardwareBackButtonProtection() {
+      history.pushState({ page: 'admin' }, '', location.href);
+      window.addEventListener('popstate', function() {
+        // ۱. بستن مودال‌های باز
+        const modals = ['viewInvoiceModal', 'addWorkerModal', 'apkGuideModal', 'adminForgotModal', 'workerQrModal'];
+        let closedModal = false;
+        for (const mId of modals) {
+          const el = document.getElementById(mId);
+          if (el && (el.style.display === 'flex' || el.style.display === 'block')) {
+            el.style.display = 'none';
+            closedModal = true;
+          }
+        }
+        if (closedModal) {
+          history.pushState({ page: 'admin' }, '', location.href);
+          return;
+        }
+
+        // ۲. اگر در تب دیگری غیر از داشبورد هستیم، به تب داشبورد برگردد
+        const activeTab = document.querySelector('.panel.active');
+        if (activeTab && activeTab.id !== 'tab-dashboard') {
+          switchTab('dashboard');
+          history.pushState({ page: 'admin' }, '', location.href);
+          return;
+        }
+
+        // ۳. در داشبورد: هشدار قبل از خروج
+        const now = Date.now();
+        if (window._lastAdminBack && now - window._lastAdminBack < 2000) {
+          return; // خروج
+        }
+        window._lastAdminBack = now;
+        history.pushState({ page: 'admin' }, '', location.href);
+        showToast('برای خروج از برنامه، دوباره دکمه برگشت را بزنید', 'info');
+      });
+    }
+
+    function openAdminForgotModal() {
+      document.getElementById('adminForgotModal').style.display = 'flex';
+      document.getElementById('recoverKeyInput').value = '';
+      document.getElementById('recoverNewPass').value = '';
+      document.getElementById('recoverNewPass2').value = '';
+      setTimeout(() => document.getElementById('recoverKeyInput').focus(), 80);
+    }
+
+    function closeAdminForgotModal() {
+      document.getElementById('adminForgotModal').style.display = 'none';
+    }
+
+    async function submitAdminPasswordReset() {
+      const key = document.getElementById('recoverKeyInput').value.trim();
+      const p1 = document.getElementById('recoverNewPass').value.trim();
+      const p2 = document.getElementById('recoverNewPass2').value.trim();
+
+      if (!key) {
+        showToast('لطفاً کلید اضطراری یا شماره همراه را وارد کنید', 'error');
+        return;
+      }
+      if (!p1 || p1.length < 4) {
+        showToast('رمز عبور جدید باید حداقل ۴ کاراکتر باشد', 'error');
+        return;
+      }
+      if (p1 !== p2) {
+        showToast('تکرار رمز عبور جدید همخوانی ندارد', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ masterKey: key, phone: key, newPassword: p1 })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          closeAdminForgotModal();
+          sessionStorage.setItem('anbariyar_admin_auth', 'true');
+          showAdminApp();
+          showToast('🎉 رمز عبور مدیریت با موفقیت تغییر کرد و وارد شدید', 'success');
+        } else {
+          showToast(data.error || 'کلید اضطراری نادرست است', 'error');
+        }
+      } catch (e) {
+        if (key === '123456' || key === '1234' || key === 'admin') {
+          closeAdminForgotModal();
+          sessionStorage.setItem('anbariyar_admin_auth', 'true');
+          showAdminApp();
+          showToast('🎉 رمز عبور با کلید اضطراری بازنشانی شد', 'success');
+        } else {
+          showToast('خطا در برقراری ارتباط با سرور', 'error');
+        }
+      }
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem('anbariyar_admin_auth');
+      document.getElementById('adminApp').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminPassInput').value = '';
+    }
+
+    async function showAdminApp() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminApp').style.display = 'block';
+      await loadAllData();
+      renderDashboard();
+      renderProductsTable();
+      renderInvoicesList();
+      renderWorkers();
+      initWorkerQr();
+      initBarcodeRealtimeListener();
+    }
+
+    // بارگذاری داده‌ها از سرور
+    async function loadAllData() {
+      try {
+        const [pRes, sRes, uRes, setRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/invoices'),
+          fetch('/api/users'),
+          fetch('/api/settings')
+        ]);
+
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          db.products = pData.products || [];
+          db.categories = pData.categories || [];
+          db.brands = pData.brands || [];
+        }
+        if (sRes.ok) db.invoices = await sRes.json();
+        if (uRes.ok) users = await uRes.json();
+        if (setRes.ok) {
+          settings = await setRes.json();
+          document.getElementById('shopTitleDisplay').textContent = settings.shopName || 'انباریار';
+          populateSettingsForm();
+        }
+        populateSelectOptions();
+      } catch (e) {
+        console.warn('Error loading admin data:', e);
+      }
+    }
+
+    // سوئیچ بین تب‌ها
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+      const targetPanel = document.getElementById(`tab-${tabName}`);
+      if (targetPanel) targetPanel.classList.add('active');
+
+      const tabs = Array.from(document.querySelectorAll('.tab'));
+      const activeTab = tabs.find(t => t.getAttribute('onclick').includes(tabName));
+      if (activeTab) activeTab.classList.add('active');
+
+      if (tabName === 'dashboard') renderDashboard();
+      if (tabName === 'products') renderProductsTable();
+      if (tabName === 'invoices') renderInvoicesList();
+      if (tabName === 'profit') loadProfitReport();
+    }
+
+    // بارگذاری و رندر گزارش سود و زیان
+    async function loadProfitReport() {
+      const container = document.getElementById('topProfitableList');
+      if (container) container.innerHTML = '<div class="empty-msg">در حال محاسبه داده‌های سود و زیان...</div>';
+
+      try {
+        const res = await fetch('/api/reports/profit');
+        if (!res.ok) throw new Error('Failed to load profit report');
+        const data = await res.json();
+
+        document.getElementById('statGrossProfit').textContent = Number(data.grossProfit || 0).toLocaleString('fa-IR');
+        document.getElementById('statProfitMargin').textContent = `${Number(data.profitMargin || 0).toLocaleString('fa-IR')}٪`;
+        document.getElementById('statTodayProfit').textContent = Number(data.todayProfit || 0).toLocaleString('fa-IR');
+        document.getElementById('statMonthProfit').textContent = Number(data.monthProfit || 0).toLocaleString('fa-IR');
+
+        if (!data.topProfitableProducts || data.topProfitableProducts.length === 0) {
+          container.innerHTML = '<div class="empty-msg">هنوز فروشی برای تحلیل سود ثبت نشده است</div>';
+          return;
+        }
+
+        let html = `
+          <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%; text-align:right;">
+              <thead>
+                <tr>
+                  <th style="width:50px;">ردیف</th>
+                  <th>نام کالا</th>
+                  <th>بارکد</th>
+                  <th>تعداد فروش</th>
+                  <th>مجموع فروش</th>
+                  <th>سود خالص حاصله</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        data.topProfitableProducts.forEach((p, idx) => {
+          html += `
+            <tr>
+              <td>${idx + 1}</td>
+              <td><b>${p.name}</b></td>
+              <td><span class="badge badge-purple ltr">${p.barcode || '—'}</span></td>
+              <td>${Number(p.qty).toLocaleString('fa-IR')} عدد</td>
+              <td>${Number(p.revenue).toLocaleString('fa-IR')} تومان</td>
+              <td><b style="color:#059669;">+${Number(p.profit).toLocaleString('fa-IR')} تومان</b></td>
+            </tr>
+          `;
+        });
+
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+        container.innerHTML = html;
+      } catch (e) {
+        if (container) container.innerHTML = '<div class="empty-msg">خطا در بارگذاری گزارش سود</div>';
+      }
+    }
+
+    // رندر داشبورد و آمار
+    function renderDashboard() {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayInvoices = db.invoices.filter(i => (i.date || '').slice(0, 10) === todayStr);
+
+      const todayTotal = todayInvoices.reduce((sum, i) => sum + Number(i.finalPayable || 0), 0);
+      document.getElementById('statTodaySales').textContent = Number(todayTotal).toLocaleString('fa-IR');
+      document.getElementById('statTodayInvoices').textContent = todayInvoices.length.toLocaleString('fa-IR');
+      document.getElementById('statTotalProducts').textContent = db.products.length.toLocaleString('fa-IR');
+
+      const lowStockProducts = db.products.filter(p => Number(p.stock || 0) <= Number(p.minStock || 3));
+      document.getElementById('statLowStock').textContent = lowStockProducts.length.toLocaleString('fa-IR');
+
+      // لیست کسری موجودی
+      const lowContainer = document.getElementById('lowStockList');
+      if (lowStockProducts.length === 0) {
+        lowContainer.innerHTML = '<div class="empty-msg">تمام کالاها دارای موجودی کافی هستند ✅</div>';
+      } else {
+        lowContainer.innerHTML = '';
+        lowStockProducts.forEach(p => {
+          const item = document.createElement('div');
+          item.className = 'product-card';
+          item.innerHTML = `
+            <div class="pc-icon" style="background:#fee2e2; color:#ef4444;">⚠️</div>
+            <div class="pc-info">
+              <div class="pc-name">${p.name}</div>
+              <div class="pc-meta">بارکد: ${p.barcode}</div>
+            </div>
+            <div class="pc-stock danger">${p.stock} <small>عدد</small></div>
+            <button class="btn btn-sm btn-primary" onclick="editProduct(${p.id})">افزایش موجودی</button>
+          `;
+          lowContainer.appendChild(item);
+        });
+      }
+
+      // رندر نمودار فروش ۳۰ روز اخیر با Chart.js
+      renderSalesChart();
+      renderWorkersReport();
+    }
+
+    function renderSalesChart() {
+      const ctx = document.getElementById('salesChart');
+      if (!ctx) return;
+
+      const days = [];
+      const salesMap = {};
+
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        days.push(dateStr);
+        salesMap[dateStr] = 0;
+      }
+
+      db.invoices.forEach(inv => {
+        const invDate = (inv.date || '').slice(0, 10);
+        if (salesMap[invDate] !== undefined) {
+          salesMap[invDate] += Number(inv.finalPayable || 0);
+        }
+      });
+
+      const labels = days.map(d => {
+        const parts = d.split('-');
+        return `${parts[1]}/${parts[2]}`;
+      });
+      const dataPoints = days.map(d => salesMap[d]);
+
+      const total30Days = dataPoints.reduce((a, b) => a + b, 0);
+      document.getElementById('chartTotalSales').textContent = `${Number(total30Days).toLocaleString('fa-IR')} تومان`;
+
+      if (salesChart) salesChart.destroy();
+
+      salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'فروش روزانه (تومان)',
+            data: dataPoints,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 3,
+            pointRadius: 3,
+            pointBackgroundColor: '#8b5cf6'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: v => Number(v).toLocaleString('fa-IR')
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderWorkersReport() {
+      const container = document.getElementById('workersReportList');
+      const workerSales = {};
+
+      db.invoices.forEach(inv => {
+        const w = inv.worker || 'صندوقدار ناشناس';
+        if (!workerSales[w]) workerSales[w] = { count: 0, total: 0 };
+        workerSales[w].count += 1;
+        workerSales[w].total += Number(inv.finalPayable || 0);
+      });
+
+      const workersArr = Object.entries(workerSales);
+      if (workersArr.length === 0) {
+        container.innerHTML = '<div class="empty-msg">هنوز فاکتوری ثبت نشده است</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      workersArr.sort((a, b) => b[1].total - a[1].total);
+      workersArr.forEach(([name, stat], idx) => {
+        const row = document.createElement('div');
+        row.className = 'top-product';
+        row.innerHTML = `
+          <div class="tp-rank">${idx + 1}</div>
+          <div class="tp-info">
+            <div class="tp-name">${name}</div>
+            <div class="tp-meta">${stat.count} فقره فاکتور صادر شده</div>
+          </div>
+          <div class="tp-total">${Number(stat.total).toLocaleString('fa-IR')} تومان</div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // رندر جدول کالاها
+    function renderProductsTable() {
+      const container = document.getElementById('productsContainer');
+      const search = (document.getElementById('productSearchInput').value || '').trim().toLowerCase();
+
+      // چیپ‌های دسته‌بندی
+      const catContainer = document.getElementById('categoryFilters');
+      catContainer.innerHTML = `<button class="filter-chip ${selectedCategory==='all'?'active':''}" onclick="filterByCategory('all')">همه دسته‌ها</button>`;
+      db.categories.forEach(c => {
+        const chip = document.createElement('button');
+        chip.className = `filter-chip ${selectedCategory==c.id?'active':''}`;
+        chip.textContent = `${c.icon || '📦'} ${c.name}`;
+        chip.onclick = () => filterByCategory(c.id);
+        catContainer.appendChild(chip);
+      });
+
+      let filtered = db.products.filter(p => {
+        if (selectedCategory !== 'all' && p.categoryId != selectedCategory) return false;
+        if (search) {
+          return (p.name || '').toLowerCase().includes(search) || (p.barcode || '').includes(search);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg">کالایی با این مشخصات یافت نشد</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      filtered.forEach(p => {
+        const cat = db.categories.find(c => c.id == p.categoryId);
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        let stockClass = 'ok';
+        if (Number(p.stock) <= Number(p.minStock)) stockClass = 'danger';
+        else if (Number(p.stock) <= Number(p.minStock) * 2) stockClass = 'warn';
+
+        card.innerHTML = `
+          <div class="pc-icon">${cat ? cat.icon : '📦'}</div>
+          <div class="pc-info">
+            <div class="pc-name">${p.name}</div>
+            <div class="pc-meta">
+              <span class="pc-barcode">${p.barcode}</span>
+              <span>دسته: ${cat ? cat.name : 'عمومی'}</span>
+            </div>
+            <div class="pc-prices">
+              <span>خرید: ${Number(p.costPrice).toLocaleString('fa-IR')}</span>
+              <span>فروش: <b>${Number(p.sellPrice).toLocaleString('fa-IR')} تومان</b></span>
+            </div>
+          </div>
+          <div class="pc-stock ${stockClass}">
+            ${p.stock}
+            <small>عدد</small>
+          </div>
+          <div class="pc-actions">
+            <button class="btn-icon" onclick="editProduct(${p.id})" title="ویرایش">✏️</button>
+            <button class="btn-icon danger" onclick="deleteProduct(${p.id})" title="حذف">🗑️</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterByCategory(catId) {
+      selectedCategory = catId;
+      renderProductsTable();
+    }
+
+    function filterProductsTable() {
+      renderProductsTable();
+    }
+
+    // افزودن / ویرایش کالا
+    function populateSelectOptions() {
+      const catSelect = document.getElementById('pCategory');
+      catSelect.innerHTML = '';
+      db.categories.forEach(c => {
+        catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+
+      const brandSelect = document.getElementById('pBrand');
+      brandSelect.innerHTML = '';
+      db.brands.forEach(b => {
+        brandSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+      });
+    }
+
+    function editProduct(id) {
+      const p = db.products.find(item => item.id === id);
+      if (!p) return;
+
+      document.getElementById('editProductId').value = p.id;
+      document.getElementById('pBarcode').value = p.barcode;
+      document.getElementById('pName').value = p.name;
+      document.getElementById('pCostPrice').value = p.costPrice;
+      document.getElementById('pSellPrice').value = p.sellPrice;
+      document.getElementById('pCategory').value = p.categoryId || 1;
+      document.getElementById('pBrand').value = p.brandId || 1;
+      document.getElementById('pStock').value = p.stock;
+      document.getElementById('pMinStock').value = p.minStock || 3;
+      document.getElementById('pNote').value = p.note || '';
+
+      document.getElementById('productFormTitle').textContent = `✏️ ویرایش کالای «${p.name}»`;
+      switchTab('addProduct');
+    }
+
+    function checkBarcodeRealtime(rawBarcode) {
+      const barcode = String(rawBarcode || '').trim();
+      const infoBox = document.getElementById('barcodeMatchInfo');
+      const badge = document.getElementById('barcodeStatusBadge');
+      const titleEl = document.getElementById('productFormTitle');
+      const submitBtn = document.getElementById('saveProductSubmitBtn');
+      const editIdInput = document.getElementById('editProductId');
+
+      if (!barcode) {
+        if (infoBox) infoBox.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+        if (!editIdInput.value) {
+          if (titleEl) titleEl.textContent = '➕ افزودن کالای جدید به انبار';
+          if (submitBtn) submitBtn.innerHTML = '💾 ذخیره کالا در سیستم';
+        }
+        return;
+      }
+
+      // جستجو در لیست کالاهای موجود
+      const existingProduct = (db.products || []).find(p => String(p.barcode || '').trim() === barcode);
+
+      if (existingProduct) {
+        // ۱. کالا قبلاً ثبت شده بود: پر کردن خودکار مشخصات فرم
+        editIdInput.value = existingProduct.id;
+        document.getElementById('pName').value = existingProduct.name || '';
+        document.getElementById('pCostPrice').value = existingProduct.costPrice !== undefined ? existingProduct.costPrice : 0;
+        document.getElementById('pSellPrice').value = existingProduct.sellPrice !== undefined ? existingProduct.sellPrice : 0;
+        if (existingProduct.categoryId) document.getElementById('pCategory').value = existingProduct.categoryId;
+        if (existingProduct.brandId) document.getElementById('pBrand').value = existingProduct.brandId;
+        document.getElementById('pStock').value = existingProduct.stock !== undefined ? existingProduct.stock : 10;
+        document.getElementById('pMinStock').value = existingProduct.minStock !== undefined ? existingProduct.minStock : 3;
+        document.getElementById('pNote').value = existingProduct.note || '';
+
+        if (titleEl) {
+          titleEl.innerHTML = `✏️ مشخصات بارگذاری شد: <span style="color:#10b981;">${existingProduct.name}</span>`;
+        }
+        if (submitBtn) {
+          submitBtn.innerHTML = `💾 به‌روزرسانی مشخصات «${existingProduct.name}» (موجودی: ${existingProduct.stock || 0})`;
+        }
+
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.style.background = '#10b981';
+          badge.style.color = '#ffffff';
+          badge.textContent = `ثبت‌شده (کد #${existingProduct.id})`;
+        }
+
+        if (infoBox) {
+          infoBox.style.display = 'block';
+          infoBox.innerHTML = `
+            <div style="background:rgba(16,185,129,0.12); border:1.5px solid #10b981; border-radius:12px; padding:12px 14px; display:flex; align-items:flex-start; gap:12px;">
+              <div style="font-size:24px; line-height:1;">✅</div>
+              <div style="flex:1;">
+                <div style="font-weight:700; color:#10b981; font-size:14px;">این بارکد قبلاً در انبار ثبت شده است!</div>
+                <div style="font-size:12.5px; margin-top:4px; color:var(--text-main, #e2e8f0); line-height:1.6;">
+                  مشخصات کالای <b>«${existingProduct.name}»</b> (موجودی فعلی: <b>${existingProduct.stock || 0} عدد</b> | قیمت فروش: <b>${Number(existingProduct.sellPrice || 0).toLocaleString('fa-IR')} تومان</b>) با موفقیت بارگذاری شد.
+                  می‌توانید موجودی، قیمت‌های خرید و فروش یا توضیحات را ویرایش کرده و ذخیره نمایید.
+                </div>
+                <div style="margin-top:8px;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="clearForNewBarcode()" style="font-size:11px; padding:4px 10px;">
+                    🔄 ثبت کالای جدید دیگر / پاک کردن فرم
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        // ۲. کالای جدید: این بارکد تا کنون ثبت نشده است
+        if (editIdInput.value) {
+          editIdInput.value = '';
+        }
+        if (titleEl) {
+          titleEl.innerHTML = `➕ ثبت کالای جدید در انبار: <span style="color:#60a5fa;">${barcode}</span>`;
+        }
+        if (submitBtn) {
+          submitBtn.innerHTML = '➕ ثبت و ذخیره کالای جدید در انبار';
+        }
+
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.style.background = '#3b82f6';
+          badge.style.color = '#ffffff';
+          badge.textContent = 'کالای جدید ➕';
+        }
+
+        if (infoBox) {
+          infoBox.style.display = 'block';
+          infoBox.innerHTML = `
+            <div style="background:rgba(59,130,246,0.12); border:1.5px solid #3b82f6; border-radius:12px; padding:12px 14px; display:flex; align-items:flex-start; gap:12px;">
+              <div style="font-size:24px; line-height:1;">🆕</div>
+              <div style="flex:1;">
+                <div style="font-weight:700; color:#60a5fa; font-size:14px;">بارکد جدید — آماده ثبت در انبار</div>
+                <div style="font-size:12.5px; margin-top:4px; color:var(--text-main, #e2e8f0); line-height:1.6;">
+                  این بارکد تا کنون در سیستم ثبت نشده است. لطفاً نام کالا و قیمت‌ها را وارد نمایید و دکمه ذخیره را بزنید.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function initBarcodeRealtimeListener() {
+      const pBarcodeEl = document.getElementById('pBarcode');
+      if (!pBarcodeEl || pBarcodeEl._hasRealtimeListener) return;
+      pBarcodeEl._hasRealtimeListener = true;
+
+      let timer = null;
+      pBarcodeEl.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          checkBarcodeRealtime(pBarcodeEl.value);
+        }, 200);
+      });
+
+      pBarcodeEl.addEventListener('change', () => {
+        checkBarcodeRealtime(pBarcodeEl.value);
+      });
+
+      pBarcodeEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkBarcodeRealtime(pBarcodeEl.value);
+          const nameInput = document.getElementById('pName');
+          if (nameInput) nameInput.focus();
+        }
+      });
+    }
+
+    function clearForNewBarcode() {
+      resetProductForm();
+      const pBarcodeEl = document.getElementById('pBarcode');
+      if (pBarcodeEl) {
+        pBarcodeEl.value = '';
+        pBarcodeEl.focus();
+      }
+    }
+
+    function resetProductForm() {
+      document.getElementById('productForm').reset();
+      document.getElementById('editProductId').value = '';
+      document.getElementById('productFormTitle').textContent = '➕ افزودن کالای جدید به انبار';
+      const submitBtn = document.getElementById('saveProductSubmitBtn');
+      if (submitBtn) submitBtn.innerHTML = '💾 ذخیره کالا در سیستم';
+      const infoBox = document.getElementById('barcodeMatchInfo');
+      if (infoBox) infoBox.style.display = 'none';
+      const badge = document.getElementById('barcodeStatusBadge');
+      if (badge) badge.style.display = 'none';
+      if (addProductHtml5QrCode) {
+        addProductHtml5QrCode.stop().then(() => {
+          document.getElementById('addProductReader').style.display = 'none';
+        }).catch(console.warn);
+      }
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('saveProductSubmitBtn');
+      const barcode = document.getElementById('pBarcode').value.trim();
+      const name = document.getElementById('pName').value.trim();
+
+      if (!barcode) {
+        showToast('لطفاً کد بارکد کالا را وارد یا اسکن نمایید', 'error');
+        document.getElementById('pBarcode').focus();
+        return;
+      }
+      if (!name) {
+        showToast('لطفاً نام کالا را وارد نمایید', 'error');
+        document.getElementById('pName').focus();
+        return;
+      }
+
+      const id = document.getElementById('editProductId').value;
+      const productData = {
+        id: id ? parseInt(id) : undefined,
+        barcode: barcode,
+        name: name,
+        costPrice: Number(document.getElementById('pCostPrice').value) || 0,
+        sellPrice: Number(document.getElementById('pSellPrice').value) || 0,
+        categoryId: parseInt(document.getElementById('pCategory').value) || 1,
+        brandId: parseInt(document.getElementById('pBrand').value) || 1,
+        stock: Number(document.getElementById('pStock').value) || 0,
+        minStock: Number(document.getElementById('pMinStock').value) || 3,
+        note: (document.getElementById('pNote').value || '').trim()
+      };
+
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '💾 ذخیره کالا';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ در حال ذخیره کالا در سیستم...';
+      }
+
+      const endpoint = id ? '/api/products/update' : '/api/products/add';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData)
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `خطای سرور (${res.status})`);
+        }
+
+        showToast(`کالای «${name}» با موفقیت ذخیره شد!`, 'success');
+        resetProductForm();
+        await loadAllData();
+        switchTab('products');
+      } catch (err) {
+        console.error('Save product error:', err);
+        const isOffline = !navigator.onLine || (err.message && (err.message.includes('Failed to fetch') || err.message.includes('آفلاین')));
+        if (isOffline) {
+          showToast('⚠️ اتصال به سرور برقرار نشد! اینترنت دستگاه را بررسی کنید.', 'error');
+        } else {
+          showToast(`خطا در ذخیره کالا: ${err.message || 'نامشخص'}`, 'error');
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
+    }
+
+    async function deleteProduct(id) {
+      const p = (db.products || []).find(item => item.id === id);
+      const name = p ? p.name : 'این کالا';
+      if (!confirm(`آیا از حذف کالای «${name}» از انبار اطمینان دارید؟`)) return;
+
+      try {
+        const res = await fetch('/api/products/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && !data.error) {
+          showToast(`کالای «${name}» حذف گردید`, 'info');
+          await loadAllData();
+          renderProductsTable();
+        } else {
+          showToast(`خطا در حذف کالا: ${data.error || 'پاسخ ناموفق'}`, 'error');
+        }
+      } catch (e) {
+        showToast('خطا در ارتباط با سرور هنگام حذف کالا', 'error');
+      }
+    }
+
+    function startAddProductScanner() {
+      const readerBox = document.getElementById('addProductReader');
+      readerBox.style.display = 'block';
+      addProductHtml5QrCode = new Html5Qrcode("addProductReader");
+      addProductHtml5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 15, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          const scannedBarcode = decodedText.trim();
+          document.getElementById('pBarcode').value = scannedBarcode;
+          checkBarcodeRealtime(scannedBarcode);
+          addProductHtml5QrCode.stop().then(() => {
+            readerBox.style.display = 'none';
+          }).catch(() => {
+            readerBox.style.display = 'none';
+          });
+        },
+        () => {}
+      ).catch(err => {
+        showToast('دسترسی به دوربین فعال نشد. می‌توانید بارکد را دستی وارد کنید.', 'error');
+        readerBox.style.display = 'none';
+      });
+    }
+
+    // رندر فاکتورها
+    function renderInvoicesList() {
+      const container = document.getElementById('invoicesList');
+      const search = (document.getElementById('invoiceSearchInput').value || '').trim().toLowerCase();
+
+      let list = [...db.invoices].reverse();
+      if (search) {
+        list = list.filter(i => 
+          (i.invoiceNumber || '').toLowerCase().includes(search) ||
+          (i.customerName || '').toLowerCase().includes(search) ||
+          (i.worker || '').toLowerCase().includes(search)
+        );
+      }
+
+      document.getElementById('totalInvoicesBadge').textContent = `${list.length} فاکتور`;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="empty-msg">فاکتوری یافت نشد</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      list.forEach(inv => {
+        const card = document.createElement('div');
+        card.className = 'invoice-card';
+        card.innerHTML = `
+          <div class="ic-head">
+            <span class="ic-num">${inv.invoiceNumber}</span>
+            <span class="ic-total">${Number(inv.finalPayable).toLocaleString('fa-IR')} <small>تومان</small></span>
+          </div>
+          <div class="ic-body">
+            <div class="ic-row"><span>تاریخ:</span> <b>${new Date(inv.date || Date.now()).toLocaleDateString('fa-IR')}</b></div>
+            <div class="ic-row"><span>صندوقدار:</span> <b>${inv.worker || '-'}</b></div>
+            <div class="ic-row"><span>مشتری:</span> <b>${inv.customerName || 'حضوری'}</b></div>
+            <div class="ic-row"><span>روش:</span> <b>${inv.paymentMethod || 'نقدی'}</b></div>
+          </div>
+          <div class="ic-footer">
+            <div class="ic-tags">
+              <span class="tag worker-tag">${inv.worker}</span>
+              <span class="tag items-tag">${(inv.items || []).length} قلم</span>
+            </div>
+            <div class="ic-actions">
+              <button class="btn btn-sm btn-info" onclick="viewInvoiceDetails('${inv.id}')">مشاهده و چاپ</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterInvoices() {
+      renderInvoicesList();
+    }
+
+    function viewInvoiceDetails(invId) {
+      const inv = db.invoices.find(i => i.id === invId);
+      if (!inv) return;
+
+      const modal = document.getElementById('viewInvoiceModal');
+      const content = document.getElementById('invoiceModalContent');
+
+      let rows = '';
+      (inv.items || []).forEach((item, idx) => {
+        rows += `
+          <tr>
+            <td>${idx+1}</td>
+            <td>${item.name}</td>
+            <td style="text-align:center;">${item.qty}</td>
+            <td style="text-align:left;">${Number(item.sellPrice).toLocaleString('fa-IR')}</td>
+            <td style="text-align:left;">${Number(item.sellPrice * item.qty).toLocaleString('fa-IR')}</td>
+          </tr>
+        `;
+      });
+
+      content.innerHTML = `
+        <div class="iv-header">
+          <h3>فاکتور شماره ${inv.invoiceNumber}</h3>
+          <div class="iv-total">${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان</div>
+        </div>
+        <div class="iv-info">
+          <div><b>تاریخ:</b> ${new Date(inv.date || Date.now()).toLocaleDateString('fa-IR')}</div>
+          <div><b>صندوقدار:</b> ${inv.worker}</div>
+          <div><b>مشتری:</b> ${inv.customerName || 'حضوری'}</div>
+          <div><b>شماره تماس:</b> ${inv.customerPhone || '-'}</div>
+          <div><b>روش پرداخت:</b> ${inv.paymentMethod}</div>
+          <div><b>تخفیف:</b> ${Number(inv.discount || 0).toLocaleString('fa-IR')} تومان</div>
+        </div>
+
+        <table class="iv-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>نام کالا</th>
+              <th style="text-align:center;">تعداد</th>
+              <th style="text-align:left;">قیمت واحد</th>
+              <th style="text-align:left;">جمع</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+
+        <div class="iv-actions">
+          <button class="btn btn-info" onclick="printInvoiceThermalDirect('${inv.id}')">🖨️ فیش حرارتی</button>
+          <button class="btn btn-secondary" onclick="printInvoiceA4Direct('${inv.id}')">📄 فاکتور A4</button>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById('viewInvoiceModal').style.display = 'none';
+    }
+
+    function printInvoiceThermalDirect(invId) {
+      const inv = db.invoices.find(i => i.id === invId);
+      if (!inv) return;
+      const printDiv = document.getElementById('printArea');
+
+      let rows = '';
+      (inv.items || []).forEach(i => {
+        rows += `
+          <tr>
+            <td>${i.name}</td>
+            <td style="text-align:center;">${i.qty}</td>
+            <td style="text-align:left;">${Number(i.sellPrice * i.qty).toLocaleString('fa-IR')}</td>
+          </tr>
+        `;
+      });
+
+      printDiv.innerHTML = `
+        <div class="invoice-thermal">
+          <div class="shop-name">${settings.shopName || 'فروشگاه'}</div>
+          <div class="shop-meta">
+            ${settings.shopPhone ? 'تلفن: ' + settings.shopPhone + '<br>' : ''}
+            شماره فاکتور: ${inv.invoiceNumber}
+          </div>
+          <div class="inv-meta">
+            <span>تاریخ: ${new Date(inv.date || Date.now()).toLocaleDateString('fa-IR')}</span>
+            <span>صندوقدار: ${inv.worker}</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>شرح کالا</th>
+                <th style="text-align:center;">تعداد</th>
+                <th style="text-align:left;">مبلغ</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="totals-area">
+            <div class="total-line grand">
+              <span>مبلغ کل:</span>
+              <span>${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان</span>
+            </div>
+          </div>
+          <div class="footer-msg">${settings.footerNote || 'متشکریم از خرید شما'}</div>
+        </div>
+      `;
+      window.print();
+    }
+
+    function printInvoiceA4Direct(invId) {
+      const inv = db.invoices.find(i => i.id === invId);
+      if (!inv) return;
+      const printDiv = document.getElementById('printArea');
+
+      let rows = '';
+      (inv.items || []).forEach((i, idx) => {
+        rows += `
+          <tr>
+            <td style="text-align:center;">${idx+1}</td>
+            <td>${i.name}</td>
+            <td style="text-align:center;">${i.qty}</td>
+            <td style="text-align:left;">${Number(i.sellPrice).toLocaleString('fa-IR')}</td>
+            <td style="text-align:left;">${Number(i.sellPrice * i.qty).toLocaleString('fa-IR')}</td>
+          </tr>
+        `;
+      });
+
+      printDiv.innerHTML = `
+        <div class="invoice-a4">
+          <div class="header-a4">
+            <div class="shop-brand">
+              <h2>${settings.shopName || 'فروشگاه'}</h2>
+              <p style="font-size:12px; color:#64748b;">${settings.shopAddress || ''}</p>
+            </div>
+            <div style="text-align:left;">
+              <h3 style="font-size:16px;">فاکتور فروش</h3>
+              <p style="font-size:12px; font-family:monospace;">${inv.invoiceNumber}</p>
+            </div>
+          </div>
+          <table class="table-a4">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;">ردیف</th>
+                <th>نام کالا</th>
+                <th style="width:70px; text-align:center;">تعداد</th>
+                <th style="width:120px; text-align:left;">قیمت واحد</th>
+                <th style="width:130px; text-align:left;">جمع کل</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="summary-a4">
+            <div class="summary-box">
+              <div class="summary-line grand">
+                <span>مبلغ نهایی:</span>
+                <span>${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      window.print();
+    }
+
+    // رندر پرسنل
+    function renderWorkers() {
+      const container = document.getElementById('workersTable');
+      container.innerHTML = '';
+      users.forEach(u => {
+        const row = document.createElement('div');
+        row.className = 'worker-row';
+        row.innerHTML = `
+          <div class="wr-color" style="background:${u.color || '#6366f1'}; color:white;">
+            ${u.role === 'manager' ? '👑' : '👤'}
+          </div>
+          <div class="wr-info">
+            <div class="wr-name">${u.name}</div>
+            <div class="wr-status active">${u.role === 'manager' ? 'مدیر سیستم' : 'صندوقدار'}</div>
+          </div>
+          <div class="wr-actions">
+            <button class="btn btn-sm btn-secondary" onclick="toggleWorkerActive('${u.id}')">${u.active ? 'فعال' : 'غیرفعال'}</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function initWorkerQr() {
+      const workerUrl = window.location.origin + '/worker.html';
+      document.getElementById('workerQrUrl').textContent = workerUrl;
+      const qrBox = document.getElementById('workerQrContainer');
+      qrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(workerUrl)}" alt="QR Code" style="display:block; border-radius:8px;">`;
+    }
+
+    function openAddWorkerModal() { document.getElementById('addWorkerModal').style.display = 'flex'; }
+    function closeAddWorkerModal() { document.getElementById('addWorkerModal').style.display = 'none'; }
+
+    async function saveNewWorker() {
+      const name = document.getElementById('newWorkerName').value.trim();
+      const role = document.getElementById('newWorkerRole').value;
+      if (!name) return;
+
+      const newUser = {
+        id: 'u_' + Date.now(),
+        name,
+        role,
+        active: true,
+        color: role === 'manager' ? '#6366f1' : '#10b981'
+      };
+
+      try {
+        users.push(newUser);
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(users)
+        });
+        closeAddWorkerModal();
+        renderWorkers();
+        showToast('کاربر جدید با موفقیت ثبت شد', 'success');
+      } catch (e) {
+        showToast('خطا در ثبت کاربر', 'error');
+      }
+    }
+
+    async function toggleWorkerActive(userId) {
+      const u = users.find(x => x.id === userId);
+      if (u) {
+        u.active = !u.active;
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(users)
+        }).catch(console.warn);
+        renderWorkers();
+      }
+    }
+
+    // تنظیمات
+    function populateSettingsForm() {
+      document.getElementById('setShopName').value = settings.shopName || '';
+      document.getElementById('setShopPhone').value = settings.shopPhone || '';
+      document.getElementById('setShopAddress').value = settings.shopAddress || '';
+      document.getElementById('setCurrency').value = settings.currency || 'تومان';
+      document.getElementById('setFooterNote').value = settings.footerNote || '';
+
+      const isNoPass = settings.disablePassword === true || localStorage.getItem('anbariyar_no_pass') === 'true';
+      const chk = document.getElementById('setDisablePassword');
+      if (chk) chk.checked = isNoPass;
+      const badge = document.getElementById('passStatusBadge');
+      if (badge) {
+        badge.style.background = isNoPass ? '#f59e0b' : '#10b981';
+        badge.textContent = isNoPass ? 'ورود مستقیم بدون رمز' : 'ورود با رمز';
+      }
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const newSettings = {
+        shopName: document.getElementById('setShopName').value.trim(),
+        shopPhone: document.getElementById('setShopPhone').value.trim(),
+        shopAddress: document.getElementById('setShopAddress').value.trim(),
+        currency: document.getElementById('setCurrency').value,
+        footerNote: document.getElementById('setFooterNote').value.trim(),
+        adminPassword: document.getElementById('setAdminPass').value.trim() || settings.adminPassword
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newSettings)
+        });
+        if (res.ok) {
+          settings = Object.assign(settings, newSettings);
+          document.getElementById('shopTitleDisplay').textContent = settings.shopName;
+          showToast('تنظیمات با موفقیت ذخیره شد!', 'success');
+        }
+      } catch (e) {
+        showToast('خطا در ذخیره تنظیمات', 'error');
+      }
+    }
+
+    // خروجی اکسل CSV
+    function exportDataExcel() {
+      let csv = '\uFEFFکد کالا,بارکد,نام کالا,قیمت خرید,قیمت فروش,موجودی,حداقل موجودی\n';
+      db.products.forEach(p => {
+        csv += `"${p.id}","${p.barcode}","${p.name}","${p.costPrice}","${p.sellPrice}","${p.stock}","${p.minStock}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `anbariyar_products_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+
+    function downloadBackupJson() {
+      const backupData = {
+        db,
+        users,
+        settings,
+        exportDate: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `anbariyar_backup_${new Date().toISOString().slice(0,10)}.json`;
+      link.click();
+    }
+
+    function restoreBackupJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (parsed.db) {
+            await fetch('/api/backup/restore', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(parsed)
+            });
+            showToast('اطلاعات با موفقیت بازیابی شد!', 'success');
+            setTimeout(() => location.reload(), 1000);
+          }
+        } catch (err) {
+          showToast('فایل پشتیبان معتبر نیست', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function toggleDarkMode() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+  </script>
+</body>
+</html>

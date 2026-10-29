@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>انباریار | سیستم مدیریت فروشگاه و صندوق</title>
+  <meta name="description" content="سامانه جامع مدیریت انبار، فروشگاه، اسکن بارکد کالا، صندوق فروش، صدور فاکتور و گزارشات مالی با قابلیت نصب PWA و اندروید APK">
+  <meta property="og:title" content="انباریار | سیستم مدیریت فروشگاه و صندوق">
+  <meta property="og:description" content="سامانه جامع مدیریت انبار، فروشگاه، اسکن بارکد کالا، صندوق فروش، صدور فاکتور و گزارشات مالی با قابلیت نصب PWA و اندروید APK">
+  
+  <!-- PWA & Mobile Settings -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="انباریار">
+  <meta name="application-name" content="انباریار">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  
+  <!-- Fonts & Styles -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="/style-worker.css">
+  <link rel="stylesheet" href="/style-invoice.css">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- PWA Install Banner -->
+    <div id="pwaBanner" class="pwa-top-banner" style="display: none;">
+      <div class="pwa-title">
+        <span>📲</span>
+        <span>نصب نسخه موبایل (PWA / APK)</span>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button id="pwaInstallBtn" onclick="triggerPWAInstall()">نصب اپلیکیشن</button>
+        <button onclick="openApkGuideModal()" style="background:#334155;">راهنمای APK</button>
+      </div>
+    </div>
+
+    <!-- 1. صفحه انتخاب کاربر (صندوقدار) -->
+    <section id="screenPicker" class="screen picker active">
+      <div class="picker-glow"></div>
+      <div class="picker-inner">
+        <div class="brand">
+          <div class="brand-icon">📦</div>
+          <h1>انباریار</h1>
+          <p>صندوق فروش سریع و اسکن کالا</p>
+        </div>
+
+        <h2 class="picker-title">خوش آمدید</h2>
+        <p class="picker-sub">لطفاً نام خود را انتخاب کنید</p>
+
+        <div id="workersGrid" class="workers-grid">
+          <div style="color:var(--text-3); font-size:13px; padding:20px;">در حال بارگذاری کاربران...</div>
+        </div>
+
+        <div style="margin-top:16px; display:flex; gap:8px; justify-content:center;">
+          <a href="/admin.html" class="btn btn-secondary" style="font-size:12px; text-decoration:none; padding:8px 16px;">
+            🔐 ورود به پنل مدیریت
+          </a>
+          <button onclick="openApkGuideModal()" class="btn btn-secondary" style="font-size:12px; padding:8px 16px;">
+            📱 دریافت نسخه اندروید / APK
+          </button>
+        </div>
+
+        <div class="footer-sig" style="margin-top:28px;">
+          نسخه PWA ۲.۱ | هماهنگ با چاپگر حرارتی و بارکدخوان
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. صفحه اصلی اسکن و صندوق -->
+    <section id="screenScan" class="screen scan">
+      <header class="scan-header">
+        <button class="icon-btn" onclick="switchWorker()" title="بازگشت به انتخاب کاربر" style="font-weight:900; font-size:16px;">←</button>
+        <div class="worker-badge" id="workerBadge" style="--worker-color: #6366f1">
+          <span id="workerName">صندوقدار</span>
+        </div>
+
+        <div class="header-actions">
+          <a href="/daftar.html" class="icon-btn" title="دفتر حساب و نسیه هوشمند" style="text-decoration:none;background:#3730a3;color:#fff;display:inline-flex;align-items:center;gap:4px;padding:0 8px;width:auto;font-size:12px;font-weight:700;">📒 <span>دفتر نسیه</span></a>
+          <a href="/admin.html" class="icon-btn" title="پنل مدیریت" style="text-decoration:none;">🔐</a>
+          <button class="icon-btn" id="soundBtn" onclick="toggleSound()" title="صدا">🔊</button>
+          <button class="icon-btn" id="torchBtn" onclick="toggleTorch()" title="فلاش">⚡</button>
+          <button class="icon-btn" onclick="openManualModal()" title="ورود دستی بارکد">⌨️</button>
+          <button class="icon-btn" onclick="openSearchModal()" title="جستجوی کالا">🔍</button>
+          <button class="icon-btn" onclick="openApkGuideModal()" title="نصب و APK">📲</button>
+          <button class="icon-btn" onclick="switchWorker()" title="تعویض کاربر">👤</button>
+        </div>
+      </header>
+
+      <div class="scan-info">
+        <span class="pulse-dot"></span>
+        <span id="scannerStatus">دوربین فعال است - بارکد را مقابل دوربین بگیرید</span>
+      </div>
+
+      <!-- دوربین اسکن بارکد -->
+      <div id="reader" class="reader"></div>
+
+      <!-- آخرین کالای اسکن شده -->
+      <div id="lastScan" class="last-scan">
+        <div class="last-scan-empty">هنوز کالایی اسکن نشده است</div>
+      </div>
+
+      <!-- پیش‌نمایش اقلام فاکتور -->
+      <div class="invoice-preview" id="invoiceList"></div>
+
+      <!-- نوار جمع کل فاکتور -->
+      <div class="total-bar">
+        <div class="total-info">
+          <span class="total-label">مبلغ کل قابل پرداخت</span>
+          <span class="total-count" id="itemCount">۰ قلم کالا</span>
+        </div>
+        <div class="total-value" id="totalPrice">۰ <span>تومان</span></div>
+      </div>
+
+      <!-- دکمه‌های کنترلی پایین صفحه -->
+      <div class="scan-actions">
+        <button class="action-btn primary" id="btnCheckout" onclick="openCheckoutModal()" disabled>
+          💳
+          <span>تسویه فاکتور</span>
+        </button>
+        <button class="action-btn" onclick="openSearchModal()">
+          🔍
+          <span>جستجوی نام</span>
+        </button>
+        <button class="action-btn" onclick="openManualModal()">
+          ⌨️
+          <span>کد دستی</span>
+        </button>
+        <button class="action-btn" onclick="confirmClearInvoice()">
+          🗑️
+          <span>پاک کردن</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- مودال جستجوی کالا -->
+  <div id="searchModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeSearchModal()">
+    <div class="modal">
+      <h3>🔍 جستجوی کالا</h3>
+      <input type="text" id="searchInput" class="modal-input" placeholder="نام یا بخشی از بارکد کالا..." oninput="handleSearch(this.value)">
+      <div class="search-results" id="searchResults">
+        <div class="empty-msg">برای جستجو شروع به تایپ کنید</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeSearchModal()">بستن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال ورود دستی بارکد -->
+  <div id="manualModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeManualModal()">
+    <div class="modal">
+      <h3>⌨️ ورود دستی بارکد یا بارکدخوان فیزیکی</h3>
+      <div class="form-group">
+        <label>کد بارکد محصول:</label>
+        <input type="text" id="manualBarcodeInput" class="modal-input ltr" placeholder="مثلاً: 6260931400834" autofocus onkeypress="if(event.key==='Enter')submitManualBarcode()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>تعداد:</label>
+          <input type="number" id="manualQtyInput" class="modal-input ltr" value="1" min="1">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeManualModal()">انصراف</button>
+        <button class="btn btn-primary" onclick="submitManualBarcode()">افزودن به فاکتور</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تسویه حساب و صدور فاکتور -->
+  <div id="checkoutModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeCheckoutModal()">
+    <div class="modal" style="max-width:480px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0;">💳 تسویه حساب و صدور فاکتور</h3>
+        <button onclick="closeCheckoutModal()" style="background:none; border:none; font-size:18px; color:var(--text-3); cursor:pointer;">✕</button>
+      </div>
+
+      <!-- انتخاب مشتری از دفتر حساب هوشمند -->
+      <div class="form-group" style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.18); border-radius:10px; padding:10px; margin-bottom:12px;">
+        <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-weight:700;">
+          <span>📒 انتخاب مشتری از دفتر حساب هوشمند:</span>
+          <a href="/daftar.html" target="_blank" style="font-size:11px; color:var(--p1); text-decoration:none;">مدیریت مشتریان ↗</a>
+        </label>
+        <select id="ledgerCustSelect" class="modal-input" onchange="onLedgerCustomerSelected(this.value)" style="margin-bottom:6px;">
+          <option value="">-- مشتری جدید یا حضوری (بدون ثبت حساب قبلی) --</option>
+        </select>
+        <div id="ledgerCustNotice" style="font-size:11.5px; display:none; padding:6px 10px; border-radius:8px; line-height:1.6;"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>نام مشتری:</label>
+          <input type="text" id="custNameInput" class="modal-input" placeholder="مثلاً: آقای محمدی">
+        </div>
+        <div class="form-group">
+          <label>شماره موبایل (جهت اشتراک و پیامک):</label>
+          <input type="tel" id="custPhoneInput" class="modal-input ltr" placeholder="09xxxxxxxxx">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>تخفیف (تومان):</label>
+        <input type="number" id="discountInput" class="modal-input ltr" value="0" min="0" oninput="updateCheckoutSummary()">
+      </div>
+
+      <div class="form-group">
+        <label>روش پرداخت:</label>
+        <div class="payment-grid">
+          <button type="button" class="payment-btn active" id="payCash" onclick="selectPayment('نقدی')">
+            💵
+            <span>نقدی</span>
+          </button>
+          <button type="button" class="payment-btn" id="payCard" onclick="selectPayment('کارت‌خوان')">
+            💳
+            <span>کارت‌خوان</span>
+          </button>
+          <button type="button" class="payment-btn" id="payCredit" onclick="selectPayment('نسیه / حساب')">
+            📝
+            <span>نسیه (دفتر حساب)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="checkout-summary">
+        <div class="cs-row">
+          <span>جمع اقلام:</span>
+          <span id="csSubtotal">۰ تومان</span>
+        </div>
+        <div class="cs-row text-danger">
+          <span>تخفیف:</span>
+          <span id="csDiscount">۰ تومان</span>
+        </div>
+        <div class="cs-row total">
+          <span>مبلغ نهایی قابل پرداخت:</span>
+          <span id="csFinal">۰ تومان</span>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="btn btn-secondary" onclick="closeCheckoutModal()">بازگشت</button>
+        <button class="btn btn-success" id="btnSubmitPayment" onclick="submitCheckout()">
+          ✅ ثبت نهایی فاکتور
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال پایان موفقیت‌آمیز فاکتور و گزینه‌های چاپ/ارسال -->
+  <div id="successModal" class="modal-backdrop" style="display:none;">
+    <div class="modal success-modal" style="max-width:500px;">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">فاکتور با موفقیت ثبت شد!</div>
+      <div class="success-number" id="succInvoiceNum">INV-0000</div>
+      <div class="success-total" id="succTotal">۰ تومان</div>
+      <div id="succLedgerBadge" style="display:none; font-size:12px; background:rgba(16,185,129,0.12); color:#059669; border:1px solid rgba(16,185,129,0.25); border-radius:8px; padding:6px 12px; margin:8px auto; max-width:360px;">
+        ✅ در دفتر حساب مشتری (نسیه) ثبت و مانده حساب به‌روزرسانی شد.
+      </div>
+
+      <p style="font-size:12px; color:var(--text-3); margin-bottom:12px;">
+        موجودی انبار به‌روزرسانی شد و فاکتور در سامانه مالی و صندوق ثبت گردید.
+      </p>
+
+      <!-- چاپ فاکتور با انتخاب سایز پرینتر حرارتی -->
+      <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="font-size:12px; font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>🖨️ چاپ فاکتور:</span>
+          <div style="display:flex; gap:6px; font-size:11px;">
+            <label style="cursor:pointer; display:flex; align-items:center; gap:3px;">
+              <input type="radio" name="printerWidth" id="print80" value="80" checked>
+              <span>۸۰ میلی‌متری</span>
+            </label>
+            <label style="cursor:pointer; display:flex; align-items:center; gap:3px;">
+              <input type="radio" name="printerWidth" id="print58" value="58">
+              <span>۵۸ میلی‌متری (سیار)</span>
+            </label>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-info" style="flex:1; padding:8px 12px; font-size:12.5px;" onclick="printThermalInvoice()">🖨️ چاپ فیش حرارتی</button>
+          <button class="btn btn-secondary" style="flex:1; padding:8px 12px; font-size:12.5px;" onclick="printA4Invoice()">📄 چاپ فاکتور A4</button>
+        </div>
+      </div>
+
+      <!-- اشتراک‌گذاری سریع در پیام‌رسان‌ها -->
+      <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="font-size:12px; font-weight:700; margin-bottom:8px; text-align:right;">📲 ارسال صورت‌حساب به مشتری:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <button class="btn" style="background:#25d366; color:#fff; font-size:12px; padding:8px;" onclick="sendInvoiceWhatsApp()">
+            🟢 واتساپ
+          </button>
+          <button class="btn" style="background:#f97316; color:#fff; font-size:12px; padding:8px;" onclick="sendInvoiceEitaa()">
+            📮 ایتا (Eitaa)
+          </button>
+          <button class="btn" style="background:#0284c7; color:#fff; font-size:12px; padding:8px;" onclick="sendInvoiceBale()">
+            💬 بله (Bale)
+          </button>
+          <button class="btn" style="background:#8b5cf6; color:#fff; font-size:12px; padding:8px;" onclick="sendInvoiceRubika()">
+            📱 روبیکا
+          </button>
+        </div>
+        <button class="btn btn-secondary" style="width:100%; margin-top:6px; font-size:12px; padding:7px;" onclick="sendInvoiceSMS()">
+          ✉️ ارسال مستقیم پیامک (SMS)
+        </button>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <a href="/api/download/android-package" class="btn btn-secondary" style="flex:1; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+          📥 دانلود بسته APK/ZIP
+        </a>
+        <button class="btn btn-primary" onclick="finishAndNewInvoice()" style="flex:1.2; font-size:13px;">
+          ➕ شروع فاکتور بعدی
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال راهنمای تبدیل به APK و نصب PWA -->
+  <div id="apkGuideModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeApkGuideModal()">
+    <div class="modal">
+      <h3>📱 تبدیل به اپلیکیشن موبایل (PWA / APK)</h3>
+      <div style="font-size:13px; line-height:1.9; color:var(--text-2);">
+        <p><b>روش ۱: نصب مستقیم از طریق مرورگر (توصیه شده):</b></p>
+        <p style="margin-bottom:8px;">
+          در گوشی اندروید (مرورگر Chrome یا Samsung Internet)، روی منوی سه‌نقطه (⋮) بزنید و گزینه <b>«نصب برنامه» (Install App)</b> یا <b>«افزودن به صفحه اصلی» (Add to Home Screen)</b> را انتخاب کنید. برنامه مانند یک فایل APK کامل با آیکون اختصاصی و بدون نوار آدرس مرورگر نصب می‌شود.
+        </p>
+        
+        <div style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:12px; padding:12px; margin:12px 0;">
+          <p style="font-weight:bold; color:var(--p1); margin-bottom:4px;">روش ۲: خروجی فایل واقعی APK (اندروید):</p>
+          <p style="font-size:12px;">
+            این سامانه دارای فایل استاندارد <code>manifest.json</code> و Service Worker آفلاین است. کافیست آدرس این سامانه را در سایت <b>PWABuilder.com</b> وارد کرده و دکمه <b>Package for Android</b> را بزنید تا فایل نصبی <code>.apk</code> استاندارد یا فرمت AAB بازار و مایکت دریافت کنید!
+          </p>
+        </div>
+
+        <p><b>روش ۳: در آیفون / iOS (سافاری):</b></p>
+        <p>روی دکمه Share (اشتراک‌گذاری) در پایین مرورگر بزنید و گزینه <b>Add to Home Screen</b> را انتخاب نمایید.</p>
+      </div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="triggerPWAInstall()">📲 نصب هم‌اکنون</button>
+        <button class="btn btn-secondary" onclick="closeApkGuideModal()">بستن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- قالب چاپ فیش پرینتر و A4 (مخفی تا زمان چاپ) -->
+  <div id="printArea" style="display:none;"></div>
+
+  <!-- اسکریپت اصلی صندوق فروش و PWA -->
+  <script>
+    // تنظیمات و متغیرهای سراسری
+    let currentUser = null;
+    let usersList = [];
+    let invoiceItems = [];
+    let currentPaymentMethod = 'نقدی';
+    let lastCompletedInvoice = null;
+    let isSoundEnabled = true;
+    let html5QrCode = null;
+    let isScannerRunning = false;
+    let hasFlash = false;
+    let isTorchOn = false;
+    let scanCooldown = false;
+    let deferredPrompt = null;
+    let shopSettings = {
+      shopName: 'فروشگاه من',
+      shopPhone: '',
+      shopAddress: '',
+      currency: 'تومان',
+      footerNote: 'متشکریم از خرید شما 🌹'
+    };
+
+    // سنتز کننده صدای بیپ با Web Audio API
+    let audioCtx = null;
+    function playBeep(success = true) {
+      if (!isSoundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (success) {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1800, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(2400, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.12);
+        } else {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(200, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.25);
+        }
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    // پیام نوتیفیکیشن موقت (Toast)
+    function showToast(msg, type = 'info') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type} show`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3000);
+    }
+
+    // بارگذاری داده‌ها در زمان لود صفحه
+    window.addEventListener('DOMContentLoaded', async () => {
+      registerServiceWorker();
+      setupPWAInstall();
+      initHardwareBackButtonProtection();
+      await fetchSettings();
+      await fetchUsers();
+      checkSavedSession();
+    });
+
+    // حفاظت از دکمه بازگشت فیزیکی گوشی (Hardware Back Button)
+    function initHardwareBackButtonProtection() {
+      history.pushState({ app: 'pos' }, '', location.href);
+      window.addEventListener('popstate', function() {
+        // ۱. بستن مودال‌های باز
+        const modals = ['checkoutModal', 'manualModal', 'searchModal', 'successModal', 'apkGuideModal'];
+        let closedModal = false;
+        for (const mId of modals) {
+          const el = document.getElementById(mId);
+          if (el && (el.style.display === 'flex' || el.style.display === 'block')) {
+            el.style.display = 'none';
+            closedModal = true;
+          }
+        }
+        if (closedModal) {
+          history.pushState({ app: 'pos' }, '', location.href);
+          return;
+        }
+
+        // ۲. اگر در صفحه اسکن هستیم، بازگشت به صفحه انتخاب کاربر
+        const screenScan = document.getElementById('screenScan');
+        if (screenScan && screenScan.classList.contains('active')) {
+          switchWorker();
+          history.pushState({ app: 'pos' }, '', location.href);
+          showToast('به صفحه انتخاب کاربر بازگشتید', 'info');
+          return;
+        }
+
+        // ۳. در صفحه انتخاب کاربر: هشدار قبل از خروج
+        const now = Date.now();
+        if (window._lastPosBack && now - window._lastPosBack < 2000) {
+          return; // خروج
+        }
+        window._lastPosBack = now;
+        history.pushState({ app: 'pos' }, '', location.href);
+        showToast('برای خروج از برنامه، دوباره دکمه برگشت را بزنید', 'info');
+      });
+    }
+
+    // ثبت Service Worker برای PWA آفلاین
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker Registered successfully:', reg.scope))
+          .catch(err => console.warn('Service Worker registration failed:', err));
+      }
+    }
+
+    // مدیریت نصب PWA
+    function setupPWAInstall() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const banner = document.getElementById('pwaBanner');
+        if (banner) banner.style.display = 'flex';
+      });
+
+      window.addEventListener('appinstalled', () => {
+        const banner = document.getElementById('pwaBanner');
+        if (banner) banner.style.display = 'none';
+        showToast('برنامه با موفقیت نصب شد!', 'success');
+        deferredPrompt = null;
+      });
+    }
+
+    function triggerPWAInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted PWA installation');
+          }
+          deferredPrompt = null;
+          document.getElementById('pwaBanner').style.display = 'none';
+        });
+      } else {
+        openApkGuideModal();
+      }
+    }
+
+    function openApkGuideModal() {
+      document.getElementById('apkGuideModal').style.display = 'flex';
+    }
+    function closeApkGuideModal() {
+      document.getElementById('apkGuideModal').style.display = 'none';
+    }
+
+    // بارگذاری تنظیمات فروشگاه
+    async function fetchSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          shopSettings = Object.assign(shopSettings, data);
+        }
+      } catch (e) {
+        console.warn('Using default settings');
+      }
+    }
+
+    // بارگذاری لیست کاربران (صندوقداران)
+    async function fetchUsers() {
+      try {
+        const res = await fetch('/api/users');
+        if (res.ok) {
+          usersList = await res.json();
+          renderUsersList();
+        }
+      } catch (e) {
+        // Fallback default workers
+        usersList = [
+          { id: 'u1', name: 'آقای کیانی', role: 'manager', color: '#6366f1' },
+          { id: 'u2', name: 'بابک', role: 'worker', color: '#10b981' },
+          { id: 'u3', name: 'سیامک', role: 'worker', color: '#0891b2' }
+        ];
+        renderUsersList();
+      }
+    }
+
+    function renderUsersList() {
+      const grid = document.getElementById('workersGrid');
+      grid.innerHTML = '';
+      usersList.forEach(u => {
+        const btn = document.createElement('button');
+        btn.className = 'worker-btn';
+        btn.style.setProperty('--worker-color', u.color || '#6366f1');
+        btn.onclick = () => selectUser(u);
+
+        const icon = document.createElement('span');
+        icon.className = 'worker-icon';
+        icon.textContent = u.role === 'manager' ? '👑' : '👤';
+
+        const name = document.createElement('span');
+        name.className = 'worker-name';
+        name.textContent = u.name;
+
+        const role = document.createElement('span');
+        role.className = 'worker-role';
+        role.textContent = u.role === 'manager' ? 'مدیر فروشگاه' : 'صندوقدار';
+
+        btn.appendChild(icon);
+        btn.appendChild(name);
+        btn.appendChild(role);
+        grid.appendChild(btn);
+      });
+    }
+
+    function selectUser(user) {
+      currentUser = user;
+      localStorage.setItem('anbariyar_current_worker', JSON.stringify(user));
+      document.getElementById('workerName').textContent = user.name;
+      document.getElementById('workerBadge').style.setProperty('--worker-color', user.color || '#6366f1');
+
+      document.getElementById('screenPicker').classList.remove('active');
+      document.getElementById('screenScan').classList.add('active');
+
+      startScanner();
+      fetchOpenInvoice();
+    }
+
+    function checkSavedSession() {
+      const saved = localStorage.getItem('anbariyar_current_worker');
+      if (saved) {
+        try {
+          const user = JSON.parse(saved);
+          selectUser(user);
+        } catch (e) {}
+      }
+    }
+
+    function switchWorker() {
+      stopScanner();
+      localStorage.removeItem('anbariyar_current_worker');
+      currentUser = null;
+      document.getElementById('screenScan').classList.remove('active');
+      document.getElementById('screenPicker').classList.add('active');
+    }
+
+    // دریافت فاکتور باز کاربر جاری از سرور
+    async function fetchOpenInvoice() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`/api/invoice/open?worker=${encodeURIComponent(currentUser.name)}`);
+        if (res.ok) {
+          const data = await res.json();
+          invoiceItems = data.items || [];
+          renderInvoice();
+        }
+      } catch (e) {
+        console.warn('Offline mode or failed to fetch open invoice');
+      }
+    }
+
+    // راه‌اندازی اسکنر بارکد با دوربین گوشی
+    function startScanner() {
+      if (html5QrCode) return;
+      html5QrCode = new Html5Qrcode("reader");
+
+      const config = {
+        fps: 15,
+        qrbox: { width: 280, height: 180 },
+        aspectRatio: 1.6,
+        showTorchButtonIfSupported: true
+      };
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        onScanError
+      ).then(() => {
+        isScannerRunning = true;
+        document.getElementById('scannerStatus').textContent = 'دوربین فعال است - بارکد را مقابل کادر بگیرید';
+      }).catch(err => {
+        console.warn('Camera start error:', err);
+        document.getElementById('scannerStatus').textContent = 'دسترسی دوربین ممکن نشد؛ از دکمه ورود دستی (⌨️) استفاده کنید';
+      });
+    }
+
+    function stopScanner() {
+      if (html5QrCode && isScannerRunning) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          html5QrCode = null;
+          isScannerRunning = false;
+        }).catch(e => console.warn(e));
+      }
+    }
+
+    // هنگامی که بارکد توسط دوربین خوانده شد
+    async function onScanSuccess(decodedText) {
+      if (scanCooldown) return;
+      scanCooldown = true;
+      setTimeout(() => { scanCooldown = false; }, 1400);
+
+      const barcode = decodedText.trim();
+      handleBarcodeScanned(barcode);
+    }
+
+    function onScanError(errorMessage) {
+      // Ignored for smooth continuous frame decoding
+    }
+
+    // پردازش بارکد (چه از دوربین چه از ورود دستی یا بارکدخوان فیزیکی)
+    async function handleBarcodeScanned(barcode) {
+      document.getElementById('scannerStatus').textContent = `در حال بررسی بارکد: ${barcode}`;
+
+      try {
+        const res = await fetch(`/api/products/lookup?barcode=${encodeURIComponent(barcode)}`);
+        if (!res.ok) throw new Error('Not found');
+
+        const product = await res.json();
+        playBeep(true);
+        addProductToInvoice(product);
+        updateLastScanCard(product);
+        document.getElementById('scannerStatus').textContent = `کالای «${product.name}» اضافه شد`;
+      } catch (e) {
+        playBeep(false);
+        document.getElementById('scannerStatus').textContent = `بارکد «${barcode}» یافت نشد`;
+        showToast(`کالایی با بارکد ${barcode} در سیستم ثبت نشده است!`, 'error');
+      }
+    }
+
+    // به‌روزرسانی کارت آخرین اسکن
+    function updateLastScanCard(product) {
+      const box = document.getElementById('lastScan');
+      const itemInCart = invoiceItems.find(i => i.barcode === product.barcode);
+      const qty = itemInCart ? itemInCart.qty : 1;
+
+      box.innerHTML = `
+        <div class="ls-content">
+          <div>
+            <div class="ls-name">✅ ${product.name}</div>
+            <div class="ls-price">${Number(product.sellPrice).toLocaleString('fa-IR')} تومان</div>
+          </div>
+          <div class="ls-qty">${qty} عدد</div>
+        </div>
+      `;
+    }
+
+    // افزودن کالا به فاکتور و ارسال به سرور
+    async function addProductToInvoice(product) {
+      const existing = invoiceItems.find(i => i.barcode === product.barcode);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        invoiceItems.push({
+          id: 'it_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          barcode: product.barcode,
+          name: product.name,
+          sellPrice: Number(product.sellPrice),
+          buyPrice: Number(product.costPrice || 0),
+          qty: 1,
+          available: Number(product.stock || 999)
+        });
+      }
+
+      renderInvoice();
+      syncInvoiceToServer();
+    }
+
+    function changeItemQty(index, delta) {
+      if (invoiceItems[index]) {
+        invoiceItems[index].qty += delta;
+        if (invoiceItems[index].qty <= 0) {
+          invoiceItems.splice(index, 1);
+        }
+        renderInvoice();
+        syncInvoiceToServer();
+      }
+    }
+
+    function removeInvoiceItem(index) {
+      invoiceItems.splice(index, 1);
+      renderInvoice();
+      syncInvoiceToServer();
+    }
+
+    // همگام‌سازی فاکتور جاری با بک‌اند
+    async function syncInvoiceToServer() {
+      if (!currentUser) return;
+      try {
+        await fetch('/api/invoice/changeQty', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            worker: currentUser.name,
+            items: invoiceItems
+          })
+        });
+      } catch (e) {
+        console.warn('Offline sync error');
+      }
+    }
+
+    // رندر آیتم‌های فاکتور در صفحه
+    function renderInvoice() {
+      const container = document.getElementById('invoiceList');
+      container.innerHTML = '';
+
+      if (invoiceItems.length === 0) {
+        container.innerHTML = '<div class="empty-msg">فاکتور خالی است. کالا را اسکن کنید.</div>';
+        document.getElementById('itemCount').textContent = '۰ قلم کالا';
+        document.getElementById('totalPrice').innerHTML = `۰ <span>تومان</span>`;
+        document.getElementById('btnCheckout').disabled = true;
+        return;
+      }
+
+      let total = 0;
+      let totalCount = 0;
+
+      invoiceItems.forEach((item, index) => {
+        const itemTotal = item.sellPrice * item.qty;
+        total += itemTotal;
+        totalCount += item.qty;
+
+        const row = document.createElement('div');
+        row.className = 'inv-item';
+        row.innerHTML = `
+          <button class="inv-remove" onclick="removeInvoiceItem(${index})" title="حذف">✕</button>
+          <div class="inv-name" title="${item.name}">${item.name}</div>
+          <div class="inv-controls">
+            <button class="qty-btn" onclick="changeItemQty(${index}, -1)">-</button>
+            <span class="qty-val">${item.qty}</span>
+            <button class="qty-btn" onclick="changeItemQty(${index}, 1)">+</button>
+          </div>
+          <div class="inv-price">${Number(itemTotal).toLocaleString('fa-IR')}</div>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('itemCount').textContent = `${totalCount} قلم کالا`;
+      document.getElementById('totalPrice').innerHTML = `${Number(total).toLocaleString('fa-IR')} <span>تومان</span>`;
+      document.getElementById('btnCheckout').disabled = false;
+    }
+
+    // پاک کردن فاکتور
+    function confirmClearInvoice() {
+      if (invoiceItems.length === 0) return;
+      if (confirm('آیا از پاک کردن تمام اقلام فاکتور جاری اطمینان دارید؟')) {
+        invoiceItems = [];
+        renderInvoice();
+        if (currentUser) {
+          fetch('/api/invoice/clear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ worker: currentUser.name })
+          }).catch(console.warn);
+        }
+        showToast('فاکتور پاک شد', 'info');
+      }
+    }
+
+    // مودال ورود دستی بارکد
+    function openManualModal() {
+      document.getElementById('manualModal').style.display = 'flex';
+      setTimeout(() => {
+        const input = document.getElementById('manualBarcodeInput');
+        input.value = '';
+        input.focus();
+      }, 150);
+    }
+    function closeManualModal() {
+      document.getElementById('manualModal').style.display = 'none';
+    }
+    function submitManualBarcode() {
+      const barcode = document.getElementById('manualBarcodeInput').value.trim();
+      const qty = parseInt(document.getElementById('manualQtyInput').value) || 1;
+      if (!barcode) return;
+      closeManualModal();
+      handleBarcodeScanned(barcode);
+    }
+
+    // مودال جستجوی کالا
+    function openSearchModal() {
+      document.getElementById('searchModal').style.display = 'flex';
+      setTimeout(() => {
+        const input = document.getElementById('searchInput');
+        input.value = '';
+        input.focus();
+        handleSearch('');
+      }, 150);
+    }
+    function closeSearchModal() {
+      document.getElementById('searchModal').style.display = 'none';
+    }
+
+    let searchTimer = null;
+    function handleSearch(query) {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(async () => {
+        const container = document.getElementById('searchResults');
+        container.innerHTML = '<div class="empty-msg">در حال جستجو...</div>';
+        try {
+          const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+          if (!res.ok) throw new Error('Search failed');
+          const products = await res.json();
+          if (products.length === 0) {
+            container.innerHTML = '<div class="empty-msg">کالایی یافت نشد</div>';
+            return;
+          }
+          container.innerHTML = '';
+          products.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'search-item';
+            item.innerHTML = `
+              <div class="si-name">${p.name}</div>
+              <div class="si-meta">بارکد: ${p.barcode} | موجودی: ${p.stock || 0}</div>
+              <div class="si-price">${Number(p.sellPrice).toLocaleString('fa-IR')} تومان</div>
+            `;
+            item.onclick = () => {
+              addProductToInvoice(p);
+              updateLastScanCard(p);
+              playBeep(true);
+              closeSearchModal();
+              showToast(`«${p.name}» به فاکتور افزوده شد`, 'success');
+            };
+            container.appendChild(item);
+          });
+        } catch (e) {
+          container.innerHTML = '<div class="empty-msg">خطا در دریافت نتایج</div>';
+        }
+      }, 200);
+    }
+
+    // ---------------- یکپارچه‌سازی با دفتر حساب هوشمند (Ledger Integration) ----------------
+    const LEDGER_DB_KEY = 'daftar_hooshmand_v3';
+    let selectedLedgerCustomer = null;
+
+    function getLedgerDbDefaults() {
+      return {
+        v: 3,
+        settings: { shop: shopSettings.shopName || 'فروشگاه من', cur: 'toman', tz: 'Asia/Tehran', riskDebt: 50000000, riskDays: 30, nearPct: 80, nearDays: 3, noPass: false },
+        users: [],
+        customers: [],
+        invoices: [],
+        payments: [],
+        txs: [],
+        allocs: [],
+        followups: [],
+        audit: [],
+        cashCounts: {},
+        seq: { inv: 0, rec: 0, doc: 0, cust: 0, txn: 0 },
+        meta: { lastBackup: 0, created: Date.now(), migrated: false }
+      };
+    }
+
+    function getLedgerDb() {
+      try {
+        const raw = localStorage.getItem(LEDGER_DB_KEY) || localStorage.getItem('dh_v2_db');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (!parsed.customers) parsed.customers = [];
+          if (!parsed.invoices) parsed.invoices = [];
+          if (!parsed.txs) parsed.txs = [];
+          if (!parsed.seq) parsed.seq = { inv: 0, rec: 0, doc: 0, cust: 0, txn: 0 };
+          if (!parsed.settings) parsed.settings = { cur: 'toman' };
+          return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading ledger db:', e);
+      }
+      return getLedgerDbDefaults();
+    }
+
+    function saveLedgerDb(db) {
+      try {
+        const json = JSON.stringify(db);
+        localStorage.setItem(LEDGER_DB_KEY, json);
+        localStorage.setItem('dh_v2_db', json);
+        window.dispatchEvent(new Event('storage'));
+        // Sync to server in background
+        fetch('/api/ledger/db', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: json
+        }).catch(() => {});
+      } catch (e) {
+        console.warn('Failed to save ledger db:', e);
+      }
+    }
+
+    async function populateLedgerCustomers() {
+      const select = document.getElementById('ledgerCustSelect');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- انتخاب مشتری نسیه از دفتر حساب (یا ایجاد مشتری جدید) --</option>';
+
+      // First check server for updated ledger if available
+      try {
+        const sRes = await fetch('/api/ledger/db');
+        if (sRes.ok) {
+          const sDb = await sRes.json();
+          if (sDb && Array.isArray(sDb.customers) && sDb.customers.length > 0) {
+            const localDb = getLedgerDb();
+            sDb.customers.forEach(sc => {
+              if (!localDb.customers.some(lc => lc.id === sc.id)) {
+                localDb.customers.push(sc);
+              }
+            });
+            saveLedgerDb(localDb);
+          }
+        }
+      } catch (e) {}
+
+      const db = getLedgerDb();
+      if (!db || !Array.isArray(db.customers) || db.customers.length === 0) return;
+
+      db.customers.forEach(c => {
+        if (c.status === 'inactive') return;
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.name} ${c.phone ? '(' + c.phone + ')' : ''}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function calculateLedgerCustomerBalance(cid, db) {
+      if (!db || !db.txs) return 0;
+      let bal = 0;
+      db.txs.forEach(t => {
+        if (t.cid === cid && t.status !== 'reversed') {
+          bal += (Number(t.debit) || 0) - (Number(t.credit) || 0);
+        }
+      });
+      // Convert to Toman if stored in Rial
+      const unit = (db.settings && db.settings.cur === 'rial') ? 1 : 10;
+      return Math.round(bal / unit);
+    }
+
+    function onLedgerCustomerSelected(cid) {
+      const notice = document.getElementById('ledgerCustNotice');
+      if (!cid) {
+        selectedLedgerCustomer = null;
+        if (notice) notice.style.display = 'none';
+        return;
+      }
+
+      const db = getLedgerDb();
+      if (!db || !db.customers) return;
+      const c = db.customers.find(x => x.id === cid);
+      if (!c) return;
+
+      selectedLedgerCustomer = c;
+      document.getElementById('custNameInput').value = c.name;
+      if (c.phone) document.getElementById('custPhoneInput').value = c.phone;
+
+      const bal = calculateLedgerCustomerBalance(c.id, db);
+      const limit = Number(c.limit) || 0;
+      const subtotal = invoiceItems.reduce((s, i) => s + (i.sellPrice * i.qty), 0);
+      const discount = Math.max(0, parseInt(document.getElementById('discountInput').value) || 0);
+      const totalPay = Math.max(0, subtotal - discount);
+
+      let msg = `<b>${c.name}</b> | مانده حساب فعلی در دفتر: <b>${bal.toLocaleString('fa-IR')} تومان</b> ${bal > 0 ? '(بدهکار)' : bal < 0 ? '(بستانکار)' : '(تسویه)'}`;
+      if (limit > 0) {
+        msg += ` | سقف اعتبار: ${limit.toLocaleString('fa-IR')} تومان`;
+        if (bal + totalPay > limit) {
+          msg += `<br><span style="color:#ef4444; font-weight:bold;">⚠️ هشدار: ثبت این نسیه مجموع بدهی را از سقف اعتبار بیشتر می‌کند!</span>`;
+        }
+      }
+
+      if (notice) {
+        notice.style.display = 'block';
+        notice.style.background = (limit > 0 && bal + totalPay > limit) ? 'rgba(239,68,68,0.1)' : 'rgba(99,102,241,0.08)';
+        notice.style.color = (limit > 0 && bal + totalPay > limit) ? '#dc2626' : 'var(--p1)';
+        notice.innerHTML = msg;
+      }
+    }
+
+    // ثبت اتوماتیک در دفتر حساب هوشمند
+    function syncCreditSaleToLedger(invoice) {
+      const db = getLedgerDb();
+      const unit = (db.settings && db.settings.cur === 'rial') ? 1 : 10;
+
+      let cid = selectedLedgerCustomer ? selectedLedgerCustomer.id : null;
+      const cName = String(invoice.customerName || 'مشتری نسیه').trim();
+      const cPhone = String(invoice.customerPhone || '').trim();
+
+      if (!cid) {
+        // ایجاد مشتری جدید در دفتر حساب اگر نبود
+        let existing = (db.customers || []).find(c =>
+          (cPhone && (c.phone === cPhone || c.phone2 === cPhone)) ||
+          (c.name && c.name.trim().toLowerCase() === cName.toLowerCase())
+        );
+        if (existing) {
+          cid = existing.id;
+        } else {
+          db.seq.cust = (db.seq.cust || 0) + 1;
+          cid = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          db.customers.push({
+            id: cid,
+            code: 'C-' + String(1000 + db.seq.cust),
+            name: cName,
+            phone: cPhone,
+            phone2: '',
+            address: '',
+            limit: 0,
+            status: 'active',
+            avatar: '',
+            note: 'ایجاد شده خودکار از صندوق فروشگاهی',
+            created: Date.now()
+          });
+        }
+      }
+
+      db.seq.inv = (db.seq.inv || 0) + 1;
+      db.seq.txn = (db.seq.txn || 0) + 1;
+
+      const invId = 'iv_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const txId = 'tx_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const dueTs = Date.now() + (14 * 86400000); // سررسید ۱۴ روزه پیش‌فرض
+
+      // اقلام با تبدیل واحد به ریال اگر نیاز باشد
+      const ledgerItems = (invoice.items || []).map(i => ({
+        n: i.name,
+        q: Number(i.qty || 1),
+        u: 'عدد',
+        p: Math.round(Number(i.sellPrice || 0) * unit)
+      }));
+
+      const totalInBase = Math.round(Number(invoice.finalPayable || 0) * unit);
+      const subInBase = Math.round(Number(invoice.subtotal || invoice.finalPayable || 0) * unit);
+      const discInBase = Math.round(Number(invoice.discount || 0) * unit);
+
+      // افزودن فاکتور به دفتر حساب
+      db.invoices.push({
+        id: invId,
+        no: invoice.invoiceNumber || ('F-' + String(10000 + db.seq.inv)),
+        cid: cid,
+        ts: Date.now(),
+        due: dueTs,
+        items: ledgerItems,
+        sub: subInBase,
+        disc: discInBase,
+        total: totalInBase,
+        status: 'active',
+        paidAtSale: 0,
+        note: `ثبت خودکار از صندوق فروشگاهی (صندوقدار: ${invoice.worker || 'صندوق'})`,
+        user: invoice.worker || 'صندوقدار',
+        txId: txId
+      });
+
+      // افزودن تراکنش بدهکار
+      db.txs.push({
+        id: txId,
+        n: db.seq.txn,
+        no: 'D-' + String(db.seq.txn).padStart(6, '0'),
+        cid: cid,
+        ts: Date.now(),
+        type: 'sale',
+        debit: totalInBase,
+        credit: 0,
+        desc: `فاکتور فروش نسیه ${invoice.invoiceNumber} (${invoice.items.length} قلم)`,
+        due: dueTs,
+        status: 'active',
+        ref: { inv: invId },
+        method: '',
+        user: invoice.worker || 'صندوقدار'
+      });
+
+      saveLedgerDb(db);
+
+      // Sync with server endpoint
+      fetch('/api/ledger/credit-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: cName,
+          customerPhone: cPhone,
+          items: invoice.items,
+          subtotal: invoice.subtotal,
+          discount: invoice.discount,
+          finalPayable: invoice.finalPayable,
+          invoiceNumber: invoice.invoiceNumber,
+          worker: invoice.worker
+        })
+      }).catch(err => console.warn('Server ledger sync error:', err));
+
+      return true;
+    }
+
+    // تسویه حساب
+    function openCheckoutModal() {
+      if (invoiceItems.length === 0) return;
+      populateLedgerCustomers();
+      document.getElementById('checkoutModal').style.display = 'flex';
+      updateCheckoutSummary();
+    }
+    function closeCheckoutModal() {
+      document.getElementById('checkoutModal').style.display = 'none';
+      const notice = document.getElementById('ledgerCustNotice');
+      if (notice) notice.style.display = 'none';
+    }
+
+    function selectPayment(method) {
+      currentPaymentMethod = method;
+      document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+      if (method === 'نقدی') document.getElementById('payCash').classList.add('active');
+      if (method === 'کارت‌خوان') document.getElementById('payCard').classList.add('active');
+      if (method === 'نسیه / حساب') {
+        document.getElementById('payCredit').classList.add('active');
+        const sel = document.getElementById('ledgerCustSelect');
+        if (sel && sel.value) onLedgerCustomerSelected(sel.value);
+      }
+    }
+
+    function updateCheckoutSummary() {
+      const subtotal = invoiceItems.reduce((s, i) => s + (i.sellPrice * i.qty), 0);
+      const discount = Math.max(0, parseInt(document.getElementById('discountInput').value) || 0);
+      const finalPay = Math.max(0, subtotal - discount);
+
+      document.getElementById('csSubtotal').textContent = `${Number(subtotal).toLocaleString('fa-IR')} تومان`;
+      document.getElementById('csDiscount').textContent = `${Number(discount).toLocaleString('fa-IR')} تومان`;
+      document.getElementById('csFinal').textContent = `${Number(finalPay).toLocaleString('fa-IR')} تومان`;
+
+      if (selectedLedgerCustomer) {
+        onLedgerCustomerSelected(selectedLedgerCustomer.id);
+      }
+    }
+
+    // ثبت نهایی فاکتور
+    async function submitCheckout() {
+      const btn = document.getElementById('btnSubmitPayment');
+      btn.disabled = true;
+      btn.textContent = 'در حال ثبت...';
+
+      const customerName = document.getElementById('custNameInput').value.trim() || 'مشتری حضوری';
+      const customerPhone = document.getElementById('custPhoneInput').value.trim();
+      const discount = Math.max(0, parseInt(document.getElementById('discountInput').value) || 0);
+
+      try {
+        const res = await fetch('/api/invoice/close', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            worker: currentUser ? currentUser.name : 'صندوقدار',
+            customerName,
+            customerPhone,
+            paymentMethod: currentPaymentMethod,
+            discount,
+            items: invoiceItems
+          })
+        });
+
+        if (!res.ok) throw new Error('Checkout failed');
+        const data = await res.json();
+        lastCompletedInvoice = data.invoice;
+
+        // در صورت نسیه، در دفتر حساب همگام‌سازی شود
+        let syncedToLedger = false;
+        if (currentPaymentMethod === 'نسیه / حساب') {
+          syncedToLedger = syncCreditSaleToLedger(lastCompletedInvoice);
+        }
+
+        closeCheckoutModal();
+        openSuccessModal(lastCompletedInvoice, syncedToLedger);
+      } catch (e) {
+        showToast('خطا در ثبت فاکتور! لطفاً مجدد تلاش کنید', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ ثبت نهایی فاکتور';
+      }
+    }
+
+    // مودال موفقیت‌آمیز
+    function openSuccessModal(inv, isLedgerSynced = false) {
+      document.getElementById('succInvoiceNum').textContent = inv.invoiceNumber || 'INV-1001';
+      document.getElementById('succTotal').textContent = `${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان`;
+      const badge = document.getElementById('succLedgerBadge');
+      if (badge) {
+        badge.style.display = (isLedgerSynced || inv.paymentMethod === 'نسیه / حساب') ? 'block' : 'none';
+      }
+      document.getElementById('successModal').style.display = 'flex';
+      playBeep(true);
+    }
+
+    function finishAndNewInvoice() {
+      document.getElementById('successModal').style.display = 'none';
+      invoiceItems = [];
+      selectedLedgerCustomer = null;
+      renderInvoice();
+      document.getElementById('lastScan').innerHTML = '<div class="last-scan-empty">هنوز کالایی اسکن نشده است</div>';
+      document.getElementById('custNameInput').value = '';
+      document.getElementById('custPhoneInput').value = '';
+      document.getElementById('discountInput').value = '0';
+      const select = document.getElementById('ledgerCustSelect');
+      if (select) select.value = '';
+      showToast('فاکتور جدید آماده است', 'success');
+    }
+
+    // چاپ فیش حرارتی (پشتیبانی از هر دو سایز استاندارد ۸۰mm و ۵۸mm)
+    function printThermalInvoice() {
+      if (!lastCompletedInvoice) return;
+      const inv = lastCompletedInvoice;
+      const is58 = document.getElementById('print58') && document.getElementById('print58').checked;
+      const printDiv = document.getElementById('printArea');
+
+      let rowsHtml = '';
+      inv.items.forEach(i => {
+        rowsHtml += `
+          <tr>
+            <td>${i.name}</td>
+            <td style="text-align:center;">${i.qty}</td>
+            <td style="text-align:left;">${Number(i.sellPrice * i.qty).toLocaleString('fa-IR')}</td>
+          </tr>
+        `;
+      });
+
+      printDiv.innerHTML = `
+        <div class="invoice-thermal ${is58 ? 'thermal-58' : ''}">
+          <div class="shop-name">${shopSettings.shopName || 'فروشگاه'}</div>
+          <div class="shop-meta">
+            ${shopSettings.shopPhone ? 'تلفن: ' + shopSettings.shopPhone + '<br>' : ''}
+            ${shopSettings.shopAddress ? shopSettings.shopAddress + '<br>' : ''}
+            شماره فاکتور: ${inv.invoiceNumber}
+          </div>
+          <div class="inv-meta">
+            <span>تاریخ: ${new Date(inv.date || Date.now()).toLocaleDateString('fa-IR')}</span>
+            <span>صندوقدار: ${inv.worker || ''}</span>
+          </div>
+          <div class="inv-meta">
+            <span>مشتری: ${inv.customerName || 'حضوری'}</span>
+            <span>روش: ${inv.paymentMethod || 'نقدی'}</span>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>شرح کالا</th>
+                <th style="text-align:center;">تعداد</th>
+                <th style="text-align:left;">مبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <div class="totals-area">
+            <div class="total-line">
+              <span>جمع اقلام:</span>
+              <span>${Number(inv.subtotal).toLocaleString('fa-IR')} تومان</span>
+            </div>
+            ${inv.discount ? `
+            <div class="total-line">
+              <span>تخفیف:</span>
+              <span>${Number(inv.discount).toLocaleString('fa-IR')} تومان</span>
+            </div>` : ''}
+            <div class="total-line grand">
+              <span>مبلغ نهایی:</span>
+              <span>${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان</span>
+            </div>
+          </div>
+
+          <div class="footer-msg">
+            ${shopSettings.footerNote || 'متشکریم از خرید شما 🌹'}
+          </div>
+        </div>
+      `;
+
+      window.print();
+    }
+
+    // چاپ فاکتور استاندارد A4
+    function printA4Invoice() {
+      if (!lastCompletedInvoice) return;
+      const inv = lastCompletedInvoice;
+      const printDiv = document.getElementById('printArea');
+
+      let rowsHtml = '';
+      inv.items.forEach((i, idx) => {
+        rowsHtml += `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td>
+            <td>${i.name}</td>
+            <td style="text-align:center;">${i.qty}</td>
+            <td style="text-align:left;">${Number(i.sellPrice).toLocaleString('fa-IR')}</td>
+            <td style="text-align:left;">${Number(i.sellPrice * i.qty).toLocaleString('fa-IR')}</td>
+          </tr>
+        `;
+      });
+
+      printDiv.innerHTML = `
+        <div class="invoice-a4">
+          <div class="header-a4">
+            <div class="shop-brand">
+              <h2>${shopSettings.shopName || 'فروشگاه'}</h2>
+              <p style="font-size:12px; color:#64748b; margin-top:4px;">
+                ${shopSettings.shopPhone ? 'تلفن: ' + shopSettings.shopPhone + ' | ' : ''}
+                ${shopSettings.shopAddress || ''}
+              </p>
+            </div>
+            <div style="text-align:left;">
+              <h3 style="font-size:16px; color:#1e293b;">فاکتور فروش</h3>
+              <p style="font-size:12px; color:#64748b; font-family:monospace;">${inv.invoiceNumber}</p>
+              <p style="font-size:12px; color:#64748b;">تاریخ: ${new Date(inv.date || Date.now()).toLocaleDateString('fa-IR')}</p>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; background:#f8fafc; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:12px;">
+            <span><b>خریدار:</b> ${inv.customerName || 'مشتری محترم'} ${inv.customerPhone ? '(' + inv.customerPhone + ')' : ''}</span>
+            <span><b>صندوقدار:</b> ${inv.worker || ''}</span>
+            <span><b>روش تسویه:</b> ${inv.paymentMethod || 'نقدی'}</span>
+          </div>
+
+          <table class="table-a4">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;">ردیف</th>
+                <th>نام کالا</th>
+                <th style="width:70px; text-align:center;">تعداد</th>
+                <th style="width:120px; text-align:left;">قیمت واحد (تومان)</th>
+                <th style="width:130px; text-align:left;">مبلغ کل (تومان)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <div class="summary-a4">
+            <div class="summary-box">
+              <div class="summary-line">
+                <span>جمع کل:</span>
+                <span>${Number(inv.subtotal).toLocaleString('fa-IR')} تومان</span>
+              </div>
+              <div class="summary-line">
+                <span>تخفیف:</span>
+                <span>${Number(inv.discount || 0).toLocaleString('fa-IR')} تومان</span>
+              </div>
+              <div class="summary-line grand">
+                <span>مبلغ قابل پرداخت:</span>
+                <span>${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:center; margin-top:30px; font-size:12px; color:#64748b;">
+            ${shopSettings.footerNote || 'متشکریم از حسن انتخاب شما'}
+          </div>
+        </div>
+      `;
+
+      window.print();
+    }
+
+    // قالب استاندارد متن فاکتور جهت ارسال در پیام‌رسان‌ها
+    function buildInvoiceText(inv) {
+      let text = `🧾 *فاکتور خرید از ${shopSettings.shopName || 'فروشگاه'}*\n`;
+      text += `شماره فاکتور: ${inv.invoiceNumber}\n`;
+      text += `تاریخ: ${new Date(inv.date || Date.now()).toLocaleDateString('fa-IR')}\n`;
+      text += `مشتری: ${inv.customerName || 'محترم'}\n`;
+      text += `صندوقدار: ${inv.worker}\n`;
+      text += `--------------------------------\n`;
+      inv.items.forEach((item, i) => {
+        text += `${i+1}. ${item.name} (${item.qty} عدد): ${Number(item.sellPrice * item.qty).toLocaleString('fa-IR')} تومان\n`;
+      });
+      text += `--------------------------------\n`;
+      if (inv.discount) text += `تخفیف: ${Number(inv.discount).toLocaleString('fa-IR')} تومان\n`;
+      text += `*مبلغ نهایی قابل پرداخت: ${Number(inv.finalPayable).toLocaleString('fa-IR')} تومان*\n`;
+      text += `روش پرداخت: ${inv.paymentMethod}\n`;
+      text += `${shopSettings.footerNote || 'با تشکر و سپاس از خرید شما 🌹'}`;
+      return text;
+    }
+
+    // ارسال فاکتور از طریق واتساپ
+    function sendInvoiceWhatsApp() {
+      if (!lastCompletedInvoice) return;
+      const text = buildInvoiceText(lastCompletedInvoice);
+      let phone = lastCompletedInvoice.customerPhone ? lastCompletedInvoice.customerPhone.replace(/^0/, '98') : '';
+      const url = phone
+        ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    // ارسال فاکتور در پیام‌رسان ایتا (Eitaa)
+    function sendInvoiceEitaa() {
+      if (!lastCompletedInvoice) return;
+      const text = buildInvoiceText(lastCompletedInvoice);
+      const url = `https://eitaa.com/share/url?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    // ارسال فاکتور در بله (Bale)
+    function sendInvoiceBale() {
+      if (!lastCompletedInvoice) return;
+      const text = buildInvoiceText(lastCompletedInvoice);
+      const url = `bale://chat?text=${encodeURIComponent(text)}`;
+      // Web fallback
+      const webUrl = `https://ble.ir/share/url?url=&text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+      setTimeout(() => {
+        // Fallback open if protocol not registered
+        window.open(webUrl, '_blank');
+      }, 500);
+    }
+
+    // ارسال در روبیکا (Rubika)
+    function sendInvoiceRubika() {
+      if (!lastCompletedInvoice) return;
+      const text = buildInvoiceText(lastCompletedInvoice);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('متن فاکتور کپی شد! در حال انتقال به روبیکا...', 'success');
+        }).catch(() => {});
+      }
+      setTimeout(() => {
+        window.open('https://web.rubika.ir', '_blank');
+      }, 300);
+    }
+
+    // ارسال با پیامک معمولی (SMS)
+    function sendInvoiceSMS() {
+      if (!lastCompletedInvoice) return;
+      const text = buildInvoiceText(lastCompletedInvoice);
+      const phone = (lastCompletedInvoice.customerPhone || '').replace(/\D/g, '');
+      const uri = phone ? `sms:${phone}?body=${encodeURIComponent(text)}` : `sms:?body=${encodeURIComponent(text)}`;
+      window.location.href = uri;
+    }
+
+    // دکمه‌های ابزار
+    function toggleSound() {
+      isSoundEnabled = !isSoundEnabled;
+      document.getElementById('soundBtn').textContent = isSoundEnabled ? '🔊' : '🔇';
+      showToast(isSoundEnabled ? 'صدای بیپ فعال شد' : 'صدا غیرفعال شد', 'info');
+    }
+
+    function toggleTorch() {
+      if (!html5QrCode) return;
+      try {
+        isTorchOn = !isTorchOn;
+        showToast(isTorchOn ? 'فلاش دوربین روشن' : 'فلاش دوربین خاموش', 'info');
+      } catch (e) {
+        showToast('فلاش در این دستگاه پشتیبانی نمی‌شود', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
